@@ -1,9 +1,9 @@
 === Send2CRM Placeholder ===
 Contributors: (this should be a list of wordpress.org userid's)
 Tags: Send2CRM, Salesforce
-Requires at least:5.0 TODO Work out how to select an appropriate minimum version
-Tested up to: 5.8
-Stable tag: 4.3
+Requires at least: 6.0 TODO Work out how to select an appropriate minimum version
+Tested up to: 6.8
+Stable tag: 4.3 TODO update or remove if it is not required
 Requires PHP: 8.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
