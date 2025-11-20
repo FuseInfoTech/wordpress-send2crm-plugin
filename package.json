@@ -1,0 +1,25 @@
+{
+  "name": "wordpress-send2crm-plugin",
+  "version": "0.0.1",
+  "description": "Integrate your WordPress site with the Send2CRM Salesforce package.",
+  "keywords": [
+    "wordpress",
+    "send2crm",
+    "salesforce"
+  ],
+  "homepage": "https://github.com/FuseInfoTech/wordpress-send2crm-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/FuseInfoTech/wordpress-send2crm-plugin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FuseInfoTech/wordpress-send2crm-plugin.git"
+  },
+  "license": "GPL-2.0-or-later",
+  "author": "FuseIT",
+  "type": "commonjs",
+  "main": "",
+  "scripts": {
+    "debug": "npx @wp-playground/cli@latest server --login --xdebug --experimental-unsafe-ide-integration=vscode --auto-mount=./send2crm"
+  }
+}
