@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "name": "WP Playground CLI - Listen for Xdebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9003,
+            "pathMappings": {
+                "/": "${workspaceFolder}/.playground-xdebug-root",
+                "/wordpress/wp-content/plugins/send2crm": "${workspaceFolder}/send2crm"
+            }
+        }
+    ]
+}

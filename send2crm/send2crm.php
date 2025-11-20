@@ -1,48 +1,19 @@
 <?php
 /**
- * The plugin bootstrap file
- *
- * This file is read by WordPress to generate the plugin information in the plugin
- * admin area. This file also includes all of the dependencies used by the plugin,
- * registers the activation and deactivation functions, and defines a function
- * that starts the plugin.
- * 
- * @package   Plugin_Name
- * @author    FuseIT  support@fuseit.com
- * @copyright 2025 Fuse Information Technologies Ltd
- * @license   GPL v2 or later
- * @link      https://fuseit.com
- * 
  * Plugin Name: Send2CRM
- * Plugin URI:      @TODO
- * Description:     @TODO
+ * Description: Unlocking the potential in every sales opportunity.
+ *              Seamlessly connects all your websites with your CRM.
  * Version: 0.0.1
  * Author: FuseIT
  * Author URI: https://fuseit.com
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Requires PHP:    8.3
  */
+ 
 
-// In strict mode, only a variable of exact type of the type declaration will be accepted.
-declare(strict_types=1);
-
-namespace Send2CRM;
-
-// If this file is called directly, abort.
-if ( !defined( 'ABSPATH' ) ) {
-	die( 'We\'re sorry, but you can not directly access this file.' );
-}
-
-define( 'NAME', 'Send2CRM' );
-define( 'PLUGIN_ROOT', plugin_dir_path( __FILE__ ) );
-define( 'PLUGIN_ABSOLUTE', __FILE__ );
-
-//TODO Add uninstall.php for removing plugin
-public class Send2CRM {
+class Send2CRM {
 
     public function __construct() {
-
         error_log('Initializing Send2CRM Plugin');
         // Hook into admin_init 
         add_action('admin_init', array($this,'send2crm_settings_init'));
@@ -188,3 +159,16 @@ public class Send2CRM {
 
 //Start the plugin
 new Send2CRM();
+
+
+
+
+
+
+
+
+
+
+
+
+

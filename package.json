@@ -20,6 +20,6 @@
   "type": "commonjs",
   "main": "",
   "scripts": {
-    "debug": "npx @wp-playground/cli@latest server --login --xdebug --experimental-unsafe-ide-integration=vscode --auto-mount"
+    "debug": "npx @wp-playground/cli@latest server --login --xdebug --experimental-unsafe-ide-integration=vscode --auto-mount=./send2crm"
   }
 }
