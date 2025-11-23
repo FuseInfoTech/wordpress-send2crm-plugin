@@ -1,4 +1,5 @@
 <?php
+#region Plugin Details
 /**
  * This file is read by WordPress to generate the plugin information in the plugin
  * admin area. This file also includes all of the dependencies used by the plugin,
@@ -21,7 +22,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires PHP:    8.3
  */
- 
+#endregion
 // In strict mode, only a variable of exact type of the type declaration will be accepted.
 declare(strict_types=1);
 namespace Send2CRM;
@@ -33,6 +34,8 @@ if (!defined('ABSPATH')) exit;
 // Autoloader
 require_once plugin_dir_path(__FILE__) . 'Autoloader.php';
 
+
+#region Constants
 /**
  * Current plugin version.
  * Start at version 1.0.0 and use SemVer - https://semver.org
@@ -40,10 +43,12 @@ require_once plugin_dir_path(__FILE__) . 'Autoloader.php';
  */
 define('SEND2CRM_VERSION', '1.0.0');
 
-/* The string used to uniquely identify this plugin.
- */
+// The string used to uniquely identify this plugin.
 define('SEND2CRM_SLUG', 'send2crm');
 
+// The name to for the Settings Menu, Page and Title
+define('SEND2CRM_MENU_NAME', 'Send2CRM');
+#endregion
 class Send2CRM {
     /**
      * The unique identifier of this plugin.
@@ -60,6 +65,11 @@ class Send2CRM {
     protected string $version;
 
     /**
+     * The name to for the Settings Menu, Page and Title
+     */
+    protected string $menuName;
+
+    /**
      * Define the core functionality of the plugin.
      *
      * Set the plugin name and the plugin version that can be used throughout the plugin.
@@ -71,6 +81,7 @@ class Send2CRM {
     public function __construct() {
         $this->version = SEND2CRM_VERSION;
         $this->slug = SEND2CRM_SLUG;
+        $this->menuName = SEND2CRM_MENU_NAME;
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
         $this->defineHooks();
@@ -87,8 +98,8 @@ class Send2CRM {
     {
         $isAdmin = is_admin();
 
-        // The Settings' hook initialization runs on Admin area only.
-        $settings = new Settings($this->slug);
+        //Register settings,but the hook initialization should only run on Admin area only.
+        $settings = new Settings($this->slug, $this->menuName);
 
         if ($isAdmin)
         {
