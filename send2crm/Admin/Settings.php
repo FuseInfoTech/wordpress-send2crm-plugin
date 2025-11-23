@@ -216,4 +216,14 @@ class Settings {
         echo "<input type='text' name='send2crm_js_location' value='$value'>";
         echo "<p class='description'>Enter the location of the Send2CRM JavaScript file.</p>  Default is <i>'https://cdn.jsdelivr.net/gh/FuseInfoTech/send2crmjs/send2crm.min.js'</i>";
     }
+
+    /**
+     * Retrieves a specific setting from the database.
+     *
+     * @since   1.0.0
+     * @param   string  $key    The name of the setting to retrieve.
+     */
+    public function getSetting(string $key) {
+        return get_option($key);
+    }
 }

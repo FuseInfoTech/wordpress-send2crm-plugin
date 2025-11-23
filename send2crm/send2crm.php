@@ -66,8 +66,17 @@ class Send2CRM {
 
     /**
      * The name to for the Settings Menu, Page and Title
+     * 
+     * @since    1.0.0
      */
     protected string $menuName;
+
+    /**
+     * A reference to the plugin settings class so that is is accesible.
+     *
+     * @since    1.0.0
+     */
+    public Settings $settings;
 
     /**
      * Define the core functionality of the plugin.
@@ -82,6 +91,9 @@ class Send2CRM {
         $this->version = SEND2CRM_VERSION;
         $this->slug = SEND2CRM_SLUG;
         $this->menuName = SEND2CRM_MENU_NAME;
+        //Register settings,but the hook initialization should only run on Admin area only.
+        $this->settings = new Settings($this->slug, $this->menuName);
+
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
         $this->defineHooks();
@@ -98,12 +110,10 @@ class Send2CRM {
     {
         $isAdmin = is_admin();
 
-        //Register settings,but the hook initialization should only run on Admin area only.
-        $settings = new Settings($this->slug, $this->menuName);
-
+        
         if ($isAdmin)
         {
-            $settings->initializeHooks($isAdmin);
+            $this->settings->initializeHooks($isAdmin);
         } else {
             //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
             add_action('wp_head', array($this,'send2crm_insert_snippet'));
@@ -113,9 +123,9 @@ class Send2CRM {
 
     public function send2crm_insert_snippet() {
         error_log('Inserting Send2CRM Snippet');
-        $jsLocation = get_option('send2crm_js_location');
-        $apiKey = get_option('send2crm_api_key');
-        $apiDomain = get_option('send2crm_api_domain');
+        $jsLocation = $this->settings->getSetting('send2crm_js_location'); // get_option('send2crm_js_location');
+        $apiKey = $this->settings->getSetting('send2crm_api_key');
+        $apiDomain = $this->settings->getSetting('send2crm_api_domain');
 
         if (empty($jsLocation) || empty($apiKey) || empty($apiDomain)) {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
