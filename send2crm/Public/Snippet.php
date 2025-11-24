@@ -9,6 +9,9 @@ use Send2CRM\Admin\Settings;
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
+#region Constants
+define('SNIPPET_FILENAME', 'js/standard-snippet.js');
+#endregion
 /**
  * The frontend functionality of the plugin.
  *
@@ -27,6 +30,7 @@ class Snippet {
      * @since 1.0.0
      */
     private Settings $settings;
+
 
     public function __construct(Settings $settings) {
         error_log('Initializing Public facing Send2CRM Plugin'); //TODO Remove Debug statements
@@ -47,7 +51,7 @@ class Snippet {
         }
         error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-        add_action('wp_head', array($this,'send2crm_insert_snippet'));
+        add_action('wp_enqueue_scripts', array($this,'send2crm_insert_snippet'));
         
     }
 
@@ -66,7 +70,25 @@ class Snippet {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
-        echo "<script>(function(s,e,n,d2,cr,m){n[e]=n[e]||{};m=document.createElement('script');m.onload=function(){n[e].init(d2,cr);};m.src=s;document.head.appendChild(m);})('$jsLocation', 'send2crm', window, '$apiDomain', '$apiKey');</script>";
+        $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
+        $snippetId = "{$this->settings->pluginSlug}-snippet}";
+        //TODO: Register the snippet once and then enqueue it as per wordpress best pracices. Currently stopped the snippet loading.
+        /*
+        if (wp_register_script( $snippetId, $snippetUrl, array(''), null, false ) === false)
+        {
+            error_log('Snippet could not be registered');
+            return;
+            //exit(esc_html__('Snippet could not be registered: ', 'send2crm') . $snippetUrl);
+        } */
+
+        $snippetData = array(
+            'api_key' => $apiKey,
+            'api_domain' => $apiDomain,
+            'js_location' => $jsLocation
+        );
+        wp_enqueue_script($snippetId, $snippetUrl, array(), null, false);
+        error_log('Snippet enqueued at' . $snippetUrl);
+        wp_localize_script( $snippetId, 'snippetData', $snippetData); 
     }
 
 }

@@ -23,7 +23,7 @@ class Settings {
      *
      * @since    1.0.0
      */
-    private string $pluginSlug;
+    public string $pluginSlug;
 
     /**
      * The slug name for the Settings menu.

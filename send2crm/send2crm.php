@@ -29,6 +29,7 @@ namespace Send2CRM;
 
 use Send2CRM\Admin\Settings;
 use Send2CRM\Public\Snippet;
+
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
