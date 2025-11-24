@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace Send2CRM;
 
 use Send2CRM\Admin\Settings;
+use Send2CRM\Public\Snippet;
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
@@ -78,6 +79,14 @@ class Send2CRM {
      */
     public Settings $settings;
 
+
+    /**
+     * A reference to the public facing class that inserts the Send2CRM snippet into the page.
+     * 
+     * @since    1.0.0
+     */
+    public Snippet $snippet;
+
     /**
      * Define the core functionality of the plugin.
      *
@@ -96,43 +105,18 @@ class Send2CRM {
 
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
-        $this->defineHooks();
-
-    }
-
-        /**
-     * Create the objects and register all the hooks of the plugin.
-     *
-     * @since    1.0.0
-     * @access   private
-     */
-    private function defineHooks(): void
-    {
         $isAdmin = is_admin();
 
-        
         if ($isAdmin)
         {
             $this->settings->initializeHooks($isAdmin);
         } else {
-            //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-            add_action('wp_head', array($this,'send2crm_insert_snippet'));
+            $this->snippet = new Snippet($this->settings);
+            $this->snippet->initializeHooks($isAdmin);
         }
 
     }
 
-    public function send2crm_insert_snippet() {
-        error_log('Inserting Send2CRM Snippet');
-        $jsLocation = $this->settings->getSetting('send2crm_js_location'); // get_option('send2crm_js_location');
-        $apiKey = $this->settings->getSetting('send2crm_api_key');
-        $apiDomain = $this->settings->getSetting('send2crm_api_domain');
-
-        if (empty($jsLocation) || empty($apiKey) || empty($apiDomain)) {
-            error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
-            return;
-        }
-        echo "<script>(function(s,e,n,d2,cr,m){n[e]=n[e]||{};m=document.createElement('script');m.onload=function(){n[e].init(d2,cr);};m.src=s;document.head.appendChild(m);})('$jsLocation', 'send2crm', window, '$apiDomain', '$apiKey');</script>";
-    }
 
 }
 

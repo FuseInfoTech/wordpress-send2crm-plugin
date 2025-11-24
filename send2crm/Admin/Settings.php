@@ -7,6 +7,16 @@ namespace Send2CRM\Admin;
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
+/**
+ * Send2CRM Class that contains and manages plugnin settings and 
+ * Additional settings for the Send2CRM API. 
+ * 
+ * @since      1.0.0
+ *
+ * @package    Send2CRM
+ * @subpackage Send2CRM/Admin
+ */
+
 class Settings {
         /**
      * The ID of this plugin.
@@ -42,7 +52,7 @@ class Settings {
      */
     public function __construct(string $pluginSlug, string $menuName)
     {
-        error_log('Initializing Settings'); //TODO Remove Debug statements
+        error_log('Init Send2CRM Settings'); //TODO Remove Debug statements
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
         $this->menuName = $menuName;
@@ -56,7 +66,7 @@ class Settings {
      */
     public function initializeHooks(bool $isAdmin): void
     {
-        error_log('Settings Hooks'); //TODO Remove Debug statements
+        error_log('Add Settings Hooks'); //TODO Remove Debug statements
         if ($isAdmin) {
             error_log('Initializing Settings Hooks for Admin Page');
             // Hook into admin_init 
@@ -100,7 +110,7 @@ class Settings {
             'send2crm_settings_section'
         );
 
-                // Add the api domain settings field
+        // Add the api domain settings field
         add_settings_field(
             'send2crm_api_domain',
             'Send2CRM API Domain',
@@ -119,6 +129,11 @@ class Settings {
         );
     }
 
+    /**
+     * Add Send2CRM to the Wordpress Settings menu.
+     *
+     * @since    1.0.0
+     */
     public function setupSettingsMenu() 
     {
         error_log("Adding {$this->menuName} Menu");
@@ -182,11 +197,21 @@ class Settings {
         <?php 
     }
 
+    /**
+     * Callback for displaying the required Settings section.
+     * 
+     * @since   1.0.0
+     */
     public function send2crm_settings_section(): void {
         error_log('Send2CRM Settings Section');
         echo '<p>The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.</p>';
     }
 
+    /**
+     * Callback for displaying the API key setting.
+     * 
+     * @since   1.0.0
+     */
     public function send2crm_api_key_callback() {
         error_log('Send2CRM API Key');
         // Get the current saved value 
@@ -196,6 +221,11 @@ class Settings {
         echo "<p class='description'>Enter the shared API key configured for your service in Salesforce.</p>";
     }
 
+    /**
+     * Callback for displaying the API domain setting.
+     * 
+     * @since   1.0.0
+     */
     public function send2crm_api_domain_callback() {
         error_log('Send2CRM API Domain');
         // Get the current saved value 
@@ -205,6 +235,11 @@ class Settings {
         echo "<p class='description'>Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.</p>";
     }
 
+    /**
+     * Callback for displaying the JavaScript location setting.
+     * 
+     * @since   1.0.0
+     */
     public function send2crm_js_location_callback() {
         error_log('Send2CRM JS Location');
         // Get the current saved value 
@@ -224,6 +259,9 @@ class Settings {
      * @param   string  $key    The name of the setting to retrieve.
      */
     public function getSetting(string $key) {
-        return get_option($key);
+        error_log('Get Setting: ' . $key);
+        $value = get_option($key);
+        error_log('Value returned: ' . $value);
+        return $value;
     }
 }
