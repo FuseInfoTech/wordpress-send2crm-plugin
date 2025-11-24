@@ -112,7 +112,7 @@ class Send2CRM {
         {
             $this->settings->initializeHooks($isAdmin);
         } else {
-            $this->snippet = new Snippet($this->settings);
+            $this->snippet = new Snippet($this->settings, $this->version);
             $this->snippet->initializeHooks($isAdmin);
         }
 

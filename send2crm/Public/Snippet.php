@@ -32,9 +32,18 @@ class Snippet {
     private Settings $settings;
 
 
-    public function __construct(Settings $settings) {
+    /** 
+     * Plugin version for registering and enqueuing the send2crm javascript snippet.
+     * 
+     * @since 1.0.0
+     */
+    private string $version;
+
+
+    public function __construct(Settings $settings, string $version) {
         error_log('Initializing Public facing Send2CRM Plugin'); //TODO Remove Debug statements
         $this->settings = $settings;
+        $this->version = $version;
     }
 
     /**
@@ -51,7 +60,7 @@ class Snippet {
         }
         error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-        add_action('wp_enqueue_scripts', array($this,'send2crm_insert_snippet'));
+        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
         
     }
 
@@ -60,9 +69,9 @@ class Snippet {
      * 
      * @since   1.0.0
      */
-    public function send2crm_insert_snippet() {
+    public function insertSnippet() {
         error_log('Inserting Send2CRM Snippet');
-        $jsLocation = $this->settings->getSetting('send2crm_js_location'); // get_option('send2crm_js_location');
+        $jsLocation = $this->settings->getSetting('send2crm_js_location');
         $apiKey = $this->settings->getSetting('send2crm_api_key');
         $apiDomain = $this->settings->getSetting('send2crm_api_domain');
 
@@ -71,22 +80,20 @@ class Snippet {
             return;
         }
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
-        $snippetId = "{$this->settings->pluginSlug}-snippet}";
-        //TODO: Register the snippet once and then enqueue it as per wordpress best pracices. Currently stopped the snippet loading.
-        /*
-        if (wp_register_script( $snippetId, $snippetUrl, array(''), null, false ) === false)
+        $snippetId = "{$this->settings->pluginSlug}-snippet";
+        
+        if (wp_register_script( $snippetId, $snippetUrl, array(), $this->version, false ) === false)
         {
-            error_log('Snippet could not be registered');
+            error_log('Snippet could not be registered - Send2CRM will not be activated.');
             return;
-            //exit(esc_html__('Snippet could not be registered: ', 'send2crm') . $snippetUrl);
-        } */
+        } 
 
         $snippetData = array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
-            'js_location' => $jsLocation
+            'js_location' => $jsLocation . "?ver={$this->version}"
         );
-        wp_enqueue_script($snippetId, $snippetUrl, array(), null, false);
+        wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         error_log('Snippet enqueued at' . $snippetUrl);
         wp_localize_script( $snippetId, 'snippetData', $snippetData); 
     }
