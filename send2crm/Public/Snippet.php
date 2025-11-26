@@ -100,7 +100,7 @@ class Snippet {
         $snippetData = array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
-            'js_location' => $jsLocation . "?ver={$this->version}",
+            'js_location' => $jsLocation . "?ver={$jsVersion}",
             'hash' => $hash
         );
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);

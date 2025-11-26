@@ -296,7 +296,7 @@ class Settings {
             $value = "https://cdn.jsdelivr.net/gh/FuseInfoTech/send2crmjs/send2crm.min.js";
         }
         // Output the input field 
-        echo "<input readonly='true' style='width: 50%' type='text' name='send2crm_js_location' value='$value'>";
+        echo "<input style='width: 50%' type='text' name='send2crm_js_location' value='$value'>";//TODO Change this back to read only do we need to allow for editing this.
         echo "<p class='description'>The location of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.</i>";
     }
 
@@ -305,7 +305,7 @@ class Settings {
         // Get the current saved value 
         $value = get_option('send2crm_js_version');
         // Output the input field 
-        echo "<input readonly='true' type='text' name='send2crm_js_version' value='$value'>";
+        echo "<input type='text' id='send2crm_js_version' name='send2crm_js_version' value='$value'>"; //TODO Change this back to read only
         echo "<p class='description'>The selected version of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.";
     }
 
@@ -315,11 +315,18 @@ class Settings {
      * @since   1.0.0
      * @param   string  $key    The name of the setting to retrieve.
      */
-    public function getSetting(string $key) {
+    public function getSetting(string $key): mixed {
         error_log('Get Setting: ' . $key); //TODO Remove debug Statements
         $value = get_option($key);
         error_log('Value returned: ' . $value);
         return $value;
+    }
+
+    public function updateSetting(string $key, string $value): void {
+        error_log('Update Setting: ' . $key . ' with value: ' . $value); //TODO Remove debug Statements
+        //escape the value before updating
+        update_option($key, esc_attr($value));
+        
     }
 
     public function renderVersionManagerSection(): void {

@@ -34,7 +34,11 @@ jQuery(document).ready(function($) {
     
     function displayReleases(releases) {
         var html = '<h2>Available Releases</h2>';
-        
+        //get dom element with name send2crm-js-version not the id
+        var versionElement = $('#send2crm_js_version');
+        var version = versionElement.val();
+
+
         if (releases.length === 0) {
             html += '<p>No releases found matching the criteria.</p>';
         } else {
@@ -52,7 +56,11 @@ jQuery(document).ready(function($) {
                 html += '<td>' + new Date(release.published_at).toLocaleDateString() + '</td>';
                 html += '<td>';
                 html += '<a href="' + release.html_url + '" target="_blank" class="button button-small">View</a> ';
-                html += '<button class="button button-small download-zip" data-tag="' + release.tag_name + '">Download Files</button>';
+                if (release.tag_name === version) {
+                    html += '<span class="button button-small button-primary">Current Version</span> ';
+                } else {
+                    html += '<button class="button button-small download-zip" data-tag="' + release.tag_name + '">Select Version</button>';
+                }
                 html += '</td>';
                 html += '</tr>';
             });
