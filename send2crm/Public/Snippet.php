@@ -76,12 +76,18 @@ class Snippet {
         $jsLocation = $this->settings->getSetting('send2crm_js_location');
         $apiKey = $this->settings->getSetting('send2crm_api_key');
         $apiDomain = $this->settings->getSetting('send2crm_api_domain');
-        $hash = $this->getHash($jsLocation);
+        $jsVersion = $this->settings->getSetting('send2crm_js_version');
 
-        if (empty($jsLocation) || empty($apiKey) || empty($apiDomain)) {
+
+        if (empty($jsLocation) 
+            || empty($apiKey) 
+            || empty($apiDomain)
+            || empty($jsVersion)) 
+        {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
+        $hash = $this->getHash($jsLocation);
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
         $snippetId = "{$this->settings->pluginSlug}-snippet";
         

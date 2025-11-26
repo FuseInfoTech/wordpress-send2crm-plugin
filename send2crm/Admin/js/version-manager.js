@@ -34,6 +34,7 @@ jQuery(document).ready(function($) {
     
     function displayReleases(releases) {
         var html = '<h2>Available Releases</h2>';
+        
         if (releases.length === 0) {
             html += '<p>No releases found matching the criteria.</p>';
         } else {
@@ -51,9 +52,7 @@ jQuery(document).ready(function($) {
                 html += '<td>' + new Date(release.published_at).toLocaleDateString() + '</td>';
                 html += '<td>';
                 html += '<a href="' + release.html_url + '" target="_blank" class="button button-small">View</a> ';
-                if (release.zipball_url) {
-                    html += '<button class="button button-small download-zip" data-zipball="' + release.zipball_url + '" data-tag="' + release.tag_name + '">Select</button>';
-                }
+                html += '<button class="button button-small download-zip" data-tag="' + release.tag_name + '">Download Files</button>';
                 html += '</td>';
                 html += '</tr>';
             });
@@ -67,7 +66,6 @@ jQuery(document).ready(function($) {
     // Handle download button clicks
     $(document).on('click', '.download-zip', function() {
         var button = $(this);
-        var zipballUrl = button.data('zipball');
         var tagName = button.data('tag');
         
         button.prop('disabled', true).text('Downloading...');
@@ -78,21 +76,47 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'download_github_release',
                 nonce: githubReleases.nonce,
-                zipball_url: zipballUrl,
                 tag_name: tagName
             },
             success: function(response) {
                 if (response.success) {
-                    alert('Success! ' + response.message + '\n\nFile saved to: ' + response.file_path + (response.file_size ? '\nSize: ' + response.file_size : ''));
+                    var message = 'Success! ' + response.message + '\n\nFiles downloaded:\n';
+                    
+                    $.each(response.files, function(filename, fileInfo) {
+                        if (fileInfo.success) {
+                            message += '\n✓ ' + filename;
+                            if (fileInfo.skipped) {
+                                message += ' (already exists)';
+                            } else if (fileInfo.file_size) {
+                                message += ' (' + fileInfo.file_size + ')';
+                            }
+                        } else {
+                            message += '\n✗ ' + filename + ' - ' + fileInfo.message;
+                        }
+                    });
+                    
+                    message += '\n\nLocation: ' + response.download_dir;
+                    alert(message);
                 } else {
-                    alert('Error: ' + (response.message || 'Download failed'));
+                    var errorMsg = 'Error: ' + (response.message || 'Download failed');
+                    
+                    if (response.files) {
+                        errorMsg += '\n\nDetails:\n';
+                        $.each(response.files, function(filename, fileInfo) {
+                            if (!fileInfo.success) {
+                                errorMsg += '\n✗ ' + filename + ' - ' + fileInfo.message;
+                            }
+                        });
+                    }
+                    
+                    alert(errorMsg);
                 }
             },
             error: function() {
-                alert('Failed to download release');
+                alert('Failed to download release files');
             },
             complete: function() {
-                button.prop('disabled', false).text('Download to Server');
+                button.prop('disabled', false).text('Download Files');
             }
         });
     });

@@ -16,6 +16,7 @@ define('VERSION_MANAGER_FILENAME', 'js/version-manager.js');
 define('GITHUB_USERNAME', 'FuseInfoTech');
 define('GITHUB_REPO', 'send2crmjs');
 define('MINIMUM_VERSION', '1.0.0');
+define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 #endregion
 
 /**
@@ -68,6 +69,7 @@ public function __construct(Settings $settings, string $version) {
             add_action('admin_enqueue_scripts', array($this,'insertVersionManagerJs'));
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
+            add_action('wp_ajax_download_github_release', array($this, 'ajax_download_release'));
         }
     }
 
@@ -111,6 +113,26 @@ public function __construct(Settings $settings, string $version) {
         }
         
         $result = $this->fetch_releases();
+        wp_send_json($result);
+    }
+
+     /**
+     * AJAX handler for downloading releases
+     */
+    public function ajax_download_release() {
+        check_ajax_referer('github_releases_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        $tag_name = isset($_POST['tag_name']) ? sanitize_text_field($_POST['tag_name']) : '';
+        
+        if (empty($tag_name)) {
+            wp_send_json_error('Missing tag name');
+        }
+        
+        $result = $this->download_release_files($tag_name);
         wp_send_json($result);
     }
 
@@ -177,6 +199,109 @@ public function __construct(Settings $settings, string $version) {
         }
         
         return $filtered;
+    }
+
+    /**
+     * Download specific files from a GitHub release
+     */
+    public function download_release_files($tag_name) {
+        // Files to download
+        $files_to_download = array(
+            'send2crm.min.js',
+            'send2crm.sri-hash.sha384'
+        );
+        
+        // Create a downloads directory in wp-content/uploads
+        $upload_dir = wp_upload_dir();
+        $download_dir = $upload_dir['basedir'] . UPLOAD_FOLDERNAME . $tag_name;
+        
+        if (!file_exists($download_dir)) {
+            wp_mkdir_p($download_dir);
+        }
+        
+        $results = array();
+        $all_success = true;
+        
+        foreach ($files_to_download as $filename) {
+            // Construct raw file URL
+            $file_url = sprintf(
+                'https://raw.githubusercontent.com/%s/%s/%s/%s',
+                $this->githubUsername,
+                $this->githubRepo,
+                $tag_name,
+                $filename
+            );
+            
+            $file_path = $download_dir . '/' . $filename;
+            
+            // Check if file already exists
+            if (file_exists($file_path)) {
+                $results[$filename] = array(
+                    'success' => true,
+                    'message' => 'File already exists',
+                    'file_path' => $file_path,
+                    'file_url' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . $tag_name . '/' . $filename,
+                    'skipped' => true
+                );
+                continue;
+            }
+            
+            // Download the file
+            $response = wp_remote_get($file_url, array(
+                'timeout' => 60,
+                'headers' => array(
+                    'User-Agent' => 'WordPress-Plugin'
+                )
+            ));
+            
+            if (is_wp_error($response)) {
+                $results[$filename] = array(
+                    'success' => false,
+                    'message' => 'Download failed: ' . $response->get_error_message()
+                );
+                $all_success = false;
+                continue;
+            }
+            
+            $response_code = wp_remote_retrieve_response_code($response);
+            
+            if ($response_code !== 200) {
+                $results[$filename] = array(
+                    'success' => false,
+                    'message' => 'File not found (HTTP ' . $response_code . ')'
+                );
+                $all_success = false;
+                continue;
+            }
+            
+            // Save file content
+            $file_content = wp_remote_retrieve_body($response);
+            $saved = file_put_contents($file_path, $file_content);
+            
+            if ($saved === false) {
+                $results[$filename] = array(
+                    'success' => false,
+                    'message' => 'Failed to save file'
+                );
+                $all_success = false;
+                continue;
+            }
+            
+            $results[$filename] = array(
+                'success' => true,
+                'message' => 'Downloaded successfully',
+                'file_path' => $file_path,
+                'file_url' => $upload_dir['baseurl'] . '/github-releases/' . $tag_name . '/' . $filename,
+                'file_size' => size_format(filesize($file_path))
+            );
+        }
+        
+        return array(
+            'success' => $all_success,
+            'message' => $all_success ? 'All files downloaded successfully' : 'Some files failed to download',
+            'files' => $results,
+            'download_dir' => $download_dir
+        );
     }
 
 }
