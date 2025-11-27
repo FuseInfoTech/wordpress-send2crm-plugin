@@ -72,7 +72,7 @@ public function __construct(Settings $settings, string $version) {
             add_action('admin_enqueue_scripts', array($this,'insertVersionManagerJs'));
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
-            add_action('wp_ajax_download_github_release', array($this, 'ajax_download_release'));
+            add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
         }
     }
 
@@ -97,9 +97,9 @@ public function __construct(Settings $settings, string $version) {
         );
 
         $upload_dir = wp_upload_dir();
-        wp_localize_script($versionManagerJSId, 'githubReleases', array(
+        wp_localize_script($versionManagerJSId, 'send2crmReleases', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('github_releases_nonce'),
+            'nonce' => wp_create_nonce('send2crm_releases_nonce'),
             'cdn_prefix' => CDN_PREFIX . $this->githubUsername . '/' . $this->githubRepo,
             'local_prefix' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME
         ));
@@ -112,7 +112,7 @@ public function __construct(Settings $settings, string $version) {
      */
     public function ajax_fetch_releases() {
         //TODO change github to send2crm
-        check_ajax_referer('github_releases_nonce', 'nonce');
+        check_ajax_referer('send2crm_releases_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
             wp_send_json_error('Insufficient permissions');
@@ -126,7 +126,7 @@ public function __construct(Settings $settings, string $version) {
      * AJAX handler for downloading releases
      */
     public function ajax_download_release() {
-        check_ajax_referer('github_releases_nonce', 'nonce');
+        check_ajax_referer('send2crm_releases_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
             wp_send_json_error('Insufficient permissions');
@@ -146,11 +146,7 @@ public function __construct(Settings $settings, string $version) {
      * Fetch releases from GitHub API
      */
     public function fetch_releases() {
-        $api_url = sprintf(
-            'https://api.github.com/repos/%s/%s/releases',
-            $this->githubUsername,
-            $this->githubRepo
-        );
+        $api_url = "https://api.github.com/repos/{$this->githubUsername}/{$this->githubRepo}/releases";
         
         $response = wp_remote_get($api_url, array(
             'headers' => array(
@@ -208,7 +204,7 @@ public function __construct(Settings $settings, string $version) {
     }
 
     /**
-     * Download specific files from a GitHub release
+     * Download specific files from a Send2CRM release
      */
     public function download_release_files($tag_name) {
         // Files to download
@@ -230,14 +226,8 @@ public function __construct(Settings $settings, string $version) {
         
         foreach ($files_to_download as $filename) {
             // Construct raw file URL
-            $file_url = sprintf(
-                'https://raw.githubusercontent.com/%s/%s/%s/%s',
-                $this->githubUsername,
-                $this->githubRepo,
-                $tag_name,
-                $filename
-            );
-            
+            $file_url = "https://raw.githubusercontent.com/{$this->githubUsername}/{$this->githubRepo}/{$tag_name}/{$filename}";
+
             $file_path = $download_dir . '/' . $filename;
             
             // Check if file already exists

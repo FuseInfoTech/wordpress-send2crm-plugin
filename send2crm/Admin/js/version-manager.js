@@ -8,11 +8,11 @@ jQuery(document).ready(function($) {
         fetchButton.prop('disabled', true).text('Fetching...');
         
         $.ajax({
-            url: githubReleases.ajax_url,
+            url: send2crmReleases.ajax_url,
             type: 'POST',
             data: {
                 action: 'fetch_send2crm_releases',
-                nonce: githubReleases.nonce
+                nonce: send2crmReleases.nonce
             },
             success: function(response) {
                 if (response.success && response.releases) {
@@ -36,14 +36,13 @@ jQuery(document).ready(function($) {
         });
     });
 
-    //when the "Use CDN" checkbox is checked, change the location of the JS file use the cdn url prefix stored in githubReleases.cdn_prefix. 
     $('#use_cdn').on('change', function() {
         if ($(this).is(':checked')) {
-            updateReleaseSettings("",githubReleases.cdn_prefix + "@" + jsVersionInput.val() + "/"); ;
+            updateReleaseSettings("",send2crmReleases.cdn_prefix + "@" + jsVersionInput.val() + "/"); ;
         } 
         else {
             //get the current page url prefix
-            updateReleaseSettings("", githubReleases.local_prefix + jsVersionInput.val() + "/");
+            updateReleaseSettings("", send2crmReleases.local_prefix + jsVersionInput.val() + "/");
         }
     });
 
@@ -137,7 +136,7 @@ jQuery(document).ready(function($) {
         let downloadButton = $(this);
         let tagName = downloadButton.data('tag');
         if (useCDNCheckbox.is(':checked')) {
-            updateReleaseSettings($(this).data('tag'), githubReleases.cdn_prefix + "@" + tagName + "/");
+            updateReleaseSettings($(this).data('tag'), send2crmReleases.cdn_prefix + "@" + tagName + "/");
             showNotice('success', 'Version ' + tagName + ' will be used from the CDN.', true); 
             return;
         }
@@ -147,17 +146,17 @@ jQuery(document).ready(function($) {
             .html('<span class="dashicons dashicons-update dashicons-spin" style="font-size: 13px; width: 13px; height: 13px; margin-top: 5px;"></span> Downloading...');
         
         $.ajax({
-            url: githubReleases.ajax_url,
+            url: send2crmReleases.ajax_url,
             type: 'POST',
             data: {
-                action: 'download_github_release',
-                nonce: githubReleases.nonce,
+                action: 'download_send2crm_release',
+                nonce: send2crmReleases.nonce,
                 tag_name: tagName
             },
             success: function(response) {
                 if (response.success) {
                     // Update the input fields
-                    updateReleaseSettings(tagName, upload_url)
+                    updateReleaseSettings(tagName, response.upload_url)
                     
                     // Show success notice
                     showNotice('success', 'Version ' + tagName + ' has been successfully installed!', true);
