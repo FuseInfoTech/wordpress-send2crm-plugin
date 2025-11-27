@@ -19,6 +19,7 @@ define('MINIMUM_VERSION', '1.0.0');
 define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
+define('CDN_PREFIX', 'https://cdn.jsdelivr.net/gh/'); //TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
 #endregion
 
 /**
@@ -95,9 +96,12 @@ public function __construct(Settings $settings, string $version) {
             false
         );
 
+        $upload_dir = wp_upload_dir();
         wp_localize_script($versionManagerJSId, 'githubReleases', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('github_releases_nonce')
+            'nonce' => wp_create_nonce('github_releases_nonce'),
+            'cdn_prefix' => CDN_PREFIX . $this->githubUsername . '/' . $this->githubRepo,
+            'local_prefix' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME
         ));
 
 
@@ -301,14 +305,15 @@ public function __construct(Settings $settings, string $version) {
         }
         
         //TODO This should be moved to the javascript to that the updates can be applied using 'Save Changes'
-        $this->settings->updateSetting('send2crm_js_location', $upload_dir['baseurl']. UPLOAD_FOLDERNAME . $tag_name . '/'. SEND2CRM_JS_FILENAME);
+        //$this->settings->updateSetting('send2crm_js_location', $upload_dir['baseurl']. UPLOAD_FOLDERNAME . $tag_name . '/'. SEND2CRM_JS_FILENAME);
 
-        $this->settings->updateSetting('send2crm_js_version', $tag_name);
+        //$this->settings->updateSetting('send2crm_js_version', $tag_name);
         return array(
             'success' => $all_success, 
             'message' => $all_success ? 'All files downloaded successfully' : 'Some files failed to download',
             'files' => $results,
             'download_dir' => $download_dir,
+            'upload_url' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . $tag_name  . '/',
             'version' => $tag_name
         );
     }
