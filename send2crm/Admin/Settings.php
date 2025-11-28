@@ -99,7 +99,7 @@ class Settings {
             'type' => 'array', 
             'description' => '',
             'show_in_rest' => false,    
-            //'sanitize_callback' => '' TODO implement sanitization
+            'sanitize_callback' => array($this,'sanitize_and_validate_settings')
         );
 
         register_setting($this->optionGroup, $this->optionName, $registerSettingParameters);
@@ -184,7 +184,7 @@ class Settings {
         }
 
         // Show error/update messages
-        settings_errors($this->pluginSlug);
+        //settings_errors($this->pluginSlug);
 
 
         error_log('Displaying Setting Page from Callback'); //TODO Remove Debug statements
@@ -275,15 +275,39 @@ class Settings {
      */
     public function getSetting(string $key, string $default = ''): string {
         error_log('Get Setting: ' . $key);
-        $value = get_option($this->optionName, array());
-        error_log('Value returned: ' . $value);
-        error_log('returning: ' . $value[$key]);
-        return isset($value[$key]) ? $value[$key] : $default;
+        $array = get_option($this->optionName, array());
+        error_log('Value returned: ' . serialize($array));
+        $value = $array[$key] ?? $default;
+        error_log('returning: ' . $value );
+        return $value;
     }
 
     public function getSettingName(string $key): string {
         $settingName = "{$this->optionName}[{$key}]";
         error_log('Get Setting Name: ' . $settingName);
         return $settingName;
+    }
+
+    public function sanitize_and_validate_settings(array | null $settings = array()) : array {
+        error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
+        //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
+        $output = array();
+
+        foreach ($settings as $key => $value) {
+            $sanitizedOutput = sanitize_text_field($value);
+            $output[$key] = $this->validate_setting($key,$sanitizedOutput);
+        }
+        //$validatedOutput['send2crm_api_key'] = validate_setting()
+        return $output;
+    }
+
+    public function validate_setting(string $key, string $value): string {
+        error_log('Validate Setting: ' . $value); //TODO Remove Debug statements
+        //check if text input is valid otherwise return the current option value
+        if (is_numeric($value)) {
+            add_settings_error($key, $this->pluginSlug . '-message', 'Setting should not be a number. Please enter a valid value.', 'error');
+            return $this->getSetting($key);
+        }
+        return $value;
     }
 }
