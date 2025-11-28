@@ -82,7 +82,6 @@ class Settings {
      * Add the Sections, Fields and register settings for the plugin.
      *
      * @since    1.0.0
-     * @param   $isAdmin    Whether the current request is for an administrative interface page.
      */
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
