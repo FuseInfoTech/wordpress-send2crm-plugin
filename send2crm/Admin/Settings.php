@@ -43,6 +43,9 @@ class Settings {
      */
     private string $menuName;
 
+    private string $optionGroup;
+    private string $optionName;
+
 
     /**
      * Initialize the class and set its properties.
@@ -56,6 +59,9 @@ class Settings {
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
         $this->menuName = $menuName;
+        //TODO Currently we are just using the plugin slug as the option name and group but we'll move to allowing separate groups soon
+        $this->optionGroup = $pluginSlug;
+        $this->optionName = $pluginSlug;
     }
 
     /**
@@ -88,9 +94,18 @@ class Settings {
  
         // Register the setting
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
-        register_setting('send2crm_settings', 'send2crm_api_key');
+        $registerSettingParameters = array(
+            //type and description ignored unless 'show_in_rest' => true so technically you can submit anything to options.php and wordpress will accept it but I've included it for clarity. 
+            'type' => 'array', 
+            'description' => '',
+            'show_in_rest' => false,    
+            //'sanitize_callback' => '' TODO implement sanitization
+        );
+
+        register_setting($this->optionGroup, $this->optionName, $registerSettingParameters);
+/*         register_setting('send2crm_settings', 'send2crm_api_key');
         register_setting('send2crm_settings', 'send2crm_api_domain'); 
-        register_setting('send2crm_settings', 'send2crm_js_location');
+        register_setting('send2crm_settings', 'send2crm_js_location'); */
 
         // Add the settings section
         add_settings_section(
@@ -138,11 +153,11 @@ class Settings {
         error_log("Adding {$this->menuName} Menu");
         // Add a new menu page 
         add_options_page( "{$this->menuName} Settings", // Page title 
-        $this->menuName, // Menu title 
-        'manage_options', // Capability required 
-        $this->menuSlug, // Menu slug 
-        array($this,'renderSettingsPageContent'), // Callback function 
-        99 // Position 
+            $this->menuName, // Menu title 
+            'manage_options', // Capability required 
+            $this->menuSlug, // Menu slug 
+            array($this,'renderSettingsPageContent'), // Callback function 
+            99 // Position 
         );
     }
 
@@ -165,7 +180,7 @@ class Settings {
         if (isset($_GET['settings-updated']))
         {
             // Add settings saved message with the class of "updated"
-            add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', __('Settings saved.'), 'success');
+            add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', 'Settings saved.', 'success');
         }
 
         // Show error/update messages
@@ -184,7 +199,7 @@ class Settings {
                 <?php 
                     if ($activeTab === 'required_settings') {
                         // Output security fields 
-                        settings_fields('send2crm_settings'); 
+                        settings_fields($this->optionGroup); 
                         // Output sections and fields 
                         do_settings_sections('send2crm'); 
                     }
@@ -214,9 +229,10 @@ class Settings {
     public function send2crm_api_key_callback() {
         error_log('Send2CRM API Key');
         // Get the current saved value 
-        $value = get_option('send2crm_api_key'); 
+        $value = $this->getSetting('send2crm_api_key'); 
+        $settingName = $this->getSettingName('send2crm_api_key');
         // Output the input field 
-        echo "<input type='text' name='send2crm_api_key' value='$value'>";
+        echo "<input type='text' id='send2crm_api_key'}' name=$settingName value='$value'>";
         echo "<p class='description'>Enter the shared API key configured for your service in Salesforce.</p>";
     }
 
@@ -228,9 +244,10 @@ class Settings {
     public function send2crm_api_domain_callback() {
         error_log('Send2CRM API Domain');
         // Get the current saved value 
-        $value = get_option('send2crm_api_domain');
+        $value = $this->getSetting('send2crm_api_domain');
+        $settingName = $this->getSettingName('send2crm_api_domain');
         // Output the input field 
-        echo "<input type='text' name='send2crm_api_domain' value='$value'>";
+        echo "<input type='text' id='send2crm_api_domain' name='$settingName' value='$value'>";
         echo "<p class='description'>Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.</p>";
     }
 
@@ -242,12 +259,10 @@ class Settings {
     public function send2crm_js_location_callback() {
         error_log('Send2CRM JS Location');
         // Get the current saved value 
-        $value = get_option('send2crm_js_location');
-        if (empty($value)) {
-            $value = "https://cdn.jsdelivr.net/gh/FuseInfoTech/send2crmjs/send2crm.min.js";
-        }
+        $value = $this->getSetting('send2crm_js_location');
+        $settingName = $this->getSettingName('send2crm_js_location');
         // Output the input field 
-        echo "<input type='text' name='send2crm_js_location' value='$value'>";
+        echo "<input type='text' id='send2crm_js_location' name='$settingName' value='$value'>";
         echo "<p class='description'>Enter the location of the Send2CRM JavaScript file.</p>  Default is <i>'https://cdn.jsdelivr.net/gh/FuseInfoTech/send2crmjs/send2crm.min.js'</i>";
     }
 
@@ -256,11 +271,19 @@ class Settings {
      *
      * @since   1.0.0
      * @param   string  $key    The name of the setting to retrieve.
+     * @return  string  The value of the setting if found, otherwise an empty string.
      */
-    public function getSetting(string $key) {
+    public function getSetting(string $key, string $default = ''): string {
         error_log('Get Setting: ' . $key);
-        $value = get_option($key);
+        $value = get_option($this->optionName, array());
         error_log('Value returned: ' . $value);
-        return $value;
+        error_log('returning: ' . $value[$key]);
+        return isset($value[$key]) ? $value[$key] : $default;
+    }
+
+    public function getSettingName(string $key): string {
+        $settingName = "{$this->optionName}[{$key}]";
+        error_log('Get Setting Name: ' . $settingName);
+        return $settingName;
     }
 }
