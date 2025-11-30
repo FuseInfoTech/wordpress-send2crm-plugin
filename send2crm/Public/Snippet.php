@@ -10,7 +10,9 @@ use Send2CRM\Admin\Settings;
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('SNIPPET_FILENAME', 'js/standard-snippet.js');
+define('SNIPPET_FILENAME', 'js/sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
+define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
+define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -74,6 +76,7 @@ class Snippet {
         $jsLocation = $this->settings->getSetting('send2crm_js_location');
         $apiKey = $this->settings->getSetting('send2crm_api_key');
         $apiDomain = $this->settings->getSetting('send2crm_api_domain');
+        $hash = $this->getHash($jsLocation);
 
         if (empty($jsLocation) || empty($apiKey) || empty($apiDomain)) {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
@@ -91,11 +94,26 @@ class Snippet {
         $snippetData = array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
-            'js_location' => $jsLocation . "?ver={$this->version}"
+            'js_location' => $jsLocation . "?ver={$this->version}",
+            'hash' => $hash
         );
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         error_log('Snippet enqueued at' . $snippetUrl);
         wp_localize_script( $snippetId, 'snippetData', $snippetData); 
     }
 
+    /**
+     * Get the hash of the Send2CRM JS file at the provided location.
+     * This hash should be provided with each release of Send2CRM and is
+     * used for performing Subresource Integrity checks.
+     * 
+     * @since 1.0.0
+     */
+    public function getHash(string $location): string {
+        error_log('Get hash from '. dirname($location) . '/' . SEND2CRM_HASH_FILENAME);
+        $hash = file_get_contents(dirname($location) . '/' . SEND2CRM_HASH_FILENAME);
+        return $hash;
+    }
+
+    
 }
