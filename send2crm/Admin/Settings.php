@@ -82,13 +82,14 @@ class Settings {
      * Add the Sections, Fields and register settings for the plugin.
      *
      * @since    1.0.0
+     * @param   $isAdmin    Whether the current request is for an administrative interface page.
      */
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
  
         // Register the setting
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
-        register_setting('send2crm_settings', 'send2crm_api_key');
+        register_setting('send2crm_settings', 'send2crm_api_key'); //TODO Sanitize and Validate settings by adding validation callback (3rd parameter)
         register_setting('send2crm_settings', 'send2crm_api_domain'); 
         register_setting('send2crm_settings', 'send2crm_js_location');
 
@@ -97,6 +98,13 @@ class Settings {
             'send2crm_settings_section',
             'Required Settings',
             array($this,'send2crm_settings_section'),
+            'send2crm'
+        );
+
+        add_settings_section( 
+            'version_manager_section', 
+            'Send2CRM Versions',
+            array($this, 'renderVersionManagerSection'), 
             'send2crm'
         );
 
@@ -179,14 +187,24 @@ class Settings {
             <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'required_settings'; ?>
             <h2 class="nav-tab-wrapper">
                 <a href="?page=<?php echo $this->menuSlug; ?>&tab=required_settings" class="nav-tab <?php echo $activeTab === 'required_settings' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Required Settings', $this->pluginSlug); ?></a>
+                <a href="?page=<?php echo $this->menuSlug; ?>&tab=version_manager" class="nav-tab <?php echo $activeTab === 'version_manager' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Version Manager', $this->pluginSlug); ?></a>
             </h2>
             <form method="post" action="options.php"> 
-                <?php 
+                <?php
+                    // Output security fields
+                    settings_fields('send2crm_settings'); 
                     if ($activeTab === 'required_settings') {
-                        // Output security fields 
-                        settings_fields('send2crm_settings'); 
+                        //Wrapper to preseve formatting
+                        echo '<table class="form-table">';
                         // Output sections and fields 
-                        do_settings_sections('send2crm'); 
+                        do_settings_fields( 'send2crm', 'send2crm_settings_section' );
+                        echo '</table>';
+                    } else if ($activeTab === 'version_manager') {
+                        echo '<table class="form-table">';
+                        do_settings_fields( 'send2crm', 'version_manager_section' );
+                        echo '</table>';
+
+                        $this->renderVersionManagerSection();
                     }
                     // Output save button 
                     submit_button(); 
@@ -211,7 +229,7 @@ class Settings {
      * 
      * @since   1.0.0
      */
-    public function send2crm_api_key_callback() {
+    public function send2crm_api_key_callback(): void {
         error_log('Send2CRM API Key');
         // Get the current saved value 
         $value = get_option('send2crm_api_key'); 
@@ -258,9 +276,23 @@ class Settings {
      * @param   string  $key    The name of the setting to retrieve.
      */
     public function getSetting(string $key) {
-        error_log('Get Setting: ' . $key);
+        error_log('Get Setting: ' . $key); //TODO Remove debug Statements
         $value = get_option($key);
         error_log('Value returned: ' . $value);
         return $value;
     }
+
+    private function renderVersionManagerSection(): void {
+        error_log('Render Version Manager Section');
+        ?>
+        <div class="wrap">
+            <h1>Send2CRM Version Manager</h1>
+            <button id="fetch-releases" class="button button-primary">Fetch Releases</button>
+            
+            <div id="releases-container" style="margin-top: 20px;"></div>
+        </div>
+        <?php
+    }
+
+
 }
