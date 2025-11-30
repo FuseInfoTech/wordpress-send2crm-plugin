@@ -47,6 +47,10 @@ class Settings {
     private string $optionName;
 
 
+    private array $fields;
+    private array $callbacks;
+
+
     /**
      * Initialize the class and set its properties.
      *
@@ -62,6 +66,9 @@ class Settings {
         //TODO Currently we are just using the plugin slug as the option name and group but we'll move to allowing separate groups soon
         $this->optionGroup = $pluginSlug;
         $this->optionName = $pluginSlug;
+        $this->fields = array();
+        $this->callbacks = array();
+
     }
 
     /**
@@ -103,9 +110,6 @@ class Settings {
         );
 
         register_setting($this->optionGroup, $this->optionName, $registerSettingParameters);
-/*         register_setting('send2crm_settings', 'send2crm_api_key');
-        register_setting('send2crm_settings', 'send2crm_api_domain'); 
-        register_setting('send2crm_settings', 'send2crm_js_location'); */
 
         // Add the settings section
         add_settings_section(
@@ -115,32 +119,18 @@ class Settings {
             'send2crm'
         );
 
-        // Add the api key setting field
-        add_settings_field(
-            'send2crm_api_key',
-            'Send2CRM API Key',
-            array($this,'send2crm_api_key_callback'),
-            'send2crm',
-            'send2crm_settings_section'
-        );
+        $this->create_fields();
 
-        // Add the api domain settings field
-        add_settings_field(
-            'send2crm_api_domain',
-            'Send2CRM API Domain',
-            array($this,'send2crm_api_domain_callback'),
-            'send2crm',
-            'send2crm_settings_section'
-        );
-
-        // Add the js location settings field
-        add_settings_field(
-            'send2crm_js_location',
-            'Send2CRM JS Location',
-            array($this,'send2crm_js_location_callback'),
-            'send2crm',
-            'send2crm_settings_section'
-        );
+        foreach ($this->fields as $fieldName => $fieldLabel) {
+            error_log('Add Setting Field: ' . $fieldName . ' - ' . $fieldLabel);
+            add_settings_field(
+                $fieldName,
+                $fieldLabel,
+                $this->callbacks[$fieldName],
+                'send2crm',
+                'send2crm_settings_section'
+            );
+        }
     }
 
     /**
@@ -263,7 +253,7 @@ class Settings {
         $settingName = $this->getSettingName('send2crm_js_location');
         // Output the input field 
         echo "<input type='text' id='send2crm_js_location' name='$settingName' value='$value'>";
-        echo "<p class='description'>Enter the location of the Send2CRM JavaScript file.</p>  Default is <i>'https://cdn.jsdelivr.net/gh/FuseInfoTech/send2crmjs/send2crm.min.js'</i>";
+        echo "<p class='description'>Enter the location of the Send2CRM JavaScript file.</p>";
     }
 
     /**
@@ -295,9 +285,8 @@ class Settings {
 
         foreach ($settings as $key => $value) {
             $sanitizedOutput = sanitize_text_field($value);
-            $output[$key] = $this->validate_setting($key,$sanitizedOutput);
+            $output[$key] = $this->validate_setting($key,$sanitizedOutput); //TODO Should we do validation on the front end to provide a better user expereience?
         }
-        //$validatedOutput['send2crm_api_key'] = validate_setting()
         return $output;
     }
 
@@ -310,4 +299,16 @@ class Settings {
         }
         return $value;
     }
+
+    public function add_field(string $fieldName, string $fieldLabel, array $fieldrenderfunction) {
+        $this->fields[$fieldName] = $fieldLabel;
+        $this->callbacks[$fieldName] = $fieldrenderfunction;
+    }
+
+    public function create_fields() {
+        $this->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'));
+        $this->add_field('send2crm_api_domain', 'Send2CRM API Domain', array($this, 'send2crm_api_domain_callback'));
+        $this->add_field('send2crm_js_location', 'Send2CRM JS Location', array($this, 'send2crm_js_location_callback'));
+    }
+
 }
