@@ -209,9 +209,7 @@ class Settings {
                                 // Output security fields 
                                 settings_fields($groupName); 
                                 // Output sections and fields 
-                                foreach ($this->sections as $sectionName => $sectionDetails) {
-                                    do_settings_sections( $sectionDetails['page'] );
-                                }
+                                    do_settings_sections( $groupDetails['tab_name'] );
                             }
                         }
                         // Output save button 
@@ -330,13 +328,13 @@ class Settings {
         string $fieldLabel, 
         array $fieldRenderCallback, 
         string $sectionKey = 'settings', 
-        string | null $pageName = null,
+        string $pageName = 'default_tab',
         string $groupName = 'settings'): void 
     {
         $this->fields[$fieldName] = array(
             'label' => $fieldLabel,
             'callback' => $fieldRenderCallback,
-            'page' => $pageName ?? $this->menuSlug,
+            'page' => $pageName,
             'section' => $this->get_section_name($sectionKey),
             'option_group' => $this->get_option_group_name($groupName),
         );
@@ -372,11 +370,11 @@ class Settings {
      * @param   array   $sectionRenderCallback  The callback function for rendering the section.
      * @param   string  $pageName       The name of the page to add the section to. Defaults to the name of the menu slug.
      */
-    public function add_section(string $key , string $sectionLabel, array $sectionRenderCallback, string | null $pageName = null): void {
+    public function add_section(string $key , string $sectionLabel, array $sectionRenderCallback, string $pageName = 'default_tab'): void {
         $this->sections[$this->get_section_name($key)] = array( 
             'label' => $sectionLabel,
             'callback' => $sectionRenderCallback,
-            'page' => $pageName ?? $this->menuSlug,
+            'page' => $pageName,
         );
     }
 
