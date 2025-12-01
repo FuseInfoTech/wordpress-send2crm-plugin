@@ -50,6 +50,7 @@ class Settings {
     private array $fields;
     private array $callbacks;
     private array $sections;
+    private array $groups;
 
 
     /**
@@ -69,6 +70,7 @@ class Settings {
         $this->optionName = $pluginSlug;
         $this->fields = array();
         $this->sections = array();
+        $this->groups = array();
 
     }
 
@@ -100,17 +102,20 @@ class Settings {
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
  
+        $this->create_groups();
         // Register the setting
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
-        $registerSettingParameters = array(
-            //type and description ignored unless 'show_in_rest' => true so technically you can submit anything to options.php and wordpress will accept it but I've included it for clarity. 
-            'type' => 'array', 
-            'description' => '',
-            'show_in_rest' => false,    
-            'sanitize_callback' => array($this,'sanitize_and_validate_settings')
-        );
+        foreach ($this->groups as $groupName => $groupDetails) {
+            $registerSettingParameters = array(
+                //type and description ignored unless 'show_in_rest' => true so technically you can submit anything to options.php and wordpress will accept it but I've included it for clarity. 
+                'type' => 'array', 
+                'description' => '',
+                'show_in_rest' => false,    
+                'sanitize_callback' => $groupDetails['callback'],
+            );
 
-        register_setting($this->optionGroup, $this->optionName, $registerSettingParameters);
+            register_setting($groupName, $groupDetails['option_name'], $registerSettingParameters);
+        }   
 
         $this->create_sections();
 
@@ -187,22 +192,28 @@ class Settings {
         ?>
         <div class="wrap"> 
             <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
-            <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'required_settings'; ?>
-            <h2 class="nav-tab-wrapper">
-                <a href="?page=<?php echo $this->menuSlug; ?>&tab=required_settings" class="nav-tab <?php echo $activeTab === 'required_settings' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Required Settings', $this->pluginSlug); ?></a>
-            </h2>
-            <form method="post" action="options.php"> 
-                <?php 
-                    if ($activeTab === 'required_settings') {
-                        // Output security fields 
-                        settings_fields($this->optionGroup); 
-                        // Output sections and fields 
-                        do_settings_sections('send2crm'); 
-                    }
-                    // Output save button 
-                    submit_button(); 
-                ?> 
-            </form> 
+
+            <?php
+            foreach ($this->groups as $groupName => $groupDetails) { 
+                $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'required_settings'; ?>
+                <h2 class="nav-tab-wrapper">
+                    <a href="?page=<?php echo $this->menuSlug; ?>&tab=required_settings" class="nav-tab <?php echo $activeTab === 'required_settings' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Required Settings', $this->pluginSlug); ?></a>
+                </h2>
+                <form method="post" action="options.php"> 
+                    <?php 
+                        if ($activeTab === 'required_settings') {
+                            // Output security fields 
+                            settings_fields($groupName); 
+                            // Output sections and fields 
+                            foreach ($this->sections as $sectionName => $sectionDetails) {
+                                do_settings_sections( $sectionDetails['page'] );
+                            }
+                        }
+                        // Output save button 
+                        submit_button(); 
+                    ?> 
+                </form> 
+            <?php } ?> 
         </div> 
         <?php 
     }
@@ -225,8 +236,8 @@ class Settings {
     public function send2crm_api_key_callback() {
         error_log('Send2CRM API Key');
         // Get the current saved value 
-        $value = $this->getSetting('send2crm_api_key'); 
-        $settingName = $this->getSettingName('send2crm_api_key');
+        $value = $this->getSetting('send2crm_api_key',$this->fields['send2crm_api_domain']['option_group']); 
+        $settingName = $this->getSettingName('send2crm_api_key',$this->fields['send2crm_api_key']['option_group']);
         // Output the input field 
         echo "<input type='text' id='send2crm_api_key'}' name=$settingName value='$value'>";
         echo "<p class='description'>Enter the shared API key configured for your service in Salesforce.</p>";
@@ -240,8 +251,8 @@ class Settings {
     public function send2crm_api_domain_callback() {
         error_log('Send2CRM API Domain');
         // Get the current saved value 
-        $value = $this->getSetting('send2crm_api_domain');
-        $settingName = $this->getSettingName('send2crm_api_domain');
+        $value = $this->getSetting('send2crm_api_domain', $this->fields['send2crm_api_domain']['option_group']);
+        $settingName = $this->getSettingName('send2crm_api_domain', $this->fields['send2crm_api_domain']['option_group']);
         // Output the input field 
         echo "<input type='text' id='send2crm_api_domain' name='$settingName' value='$value'>";
         echo "<p class='description'>Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.</p>";
@@ -253,10 +264,12 @@ class Settings {
      * @since   1.0.0
      */
     public function send2crm_js_location_callback() {
-        error_log('Send2CRM JS Location');
+        //$fieldId = 'send2crm_js_location'; TODO Refactor this callback so there is a single callback for all fields
+        $fieldDetails = $this->fields['send2crm_js_location'];
+        error_log($fieldDetails['label']);
         // Get the current saved value 
-        $value = $this->getSetting('send2crm_js_location');
-        $settingName = $this->getSettingName('send2crm_js_location');
+        $value = $this->getSetting('send2crm_js_location', $fieldDetails['option_group']);
+        $settingName = $this->getSettingName('send2crm_js_location', $fieldDetails['option_group']);
         // Output the input field 
         echo "<input type='text' id='send2crm_js_location' name='$settingName' value='$value'>";
         echo "<p class='description'>Enter the location of the Send2CRM JavaScript file.</p>";
@@ -269,27 +282,28 @@ class Settings {
      * @param   string  $key    The name of the setting to retrieve.
      * @return  string  The value of the setting if found, otherwise an empty string.
      */
-    public function getSetting(string $key, string $default = ''): string {
+    public function getSetting(string $key, string $groupName = 'settings', string $default = ''): string {
         error_log('Get Setting: ' . $key);
-        $array = get_option($this->optionName, array());
+        $array = get_option($this->groups[$groupName]['option_name'], array()); //TODO fix null values
         error_log('Value returned: ' . serialize($array));
         $value = $array[$key] ?? $default;
         error_log('returning: ' . $value );
         return $value;
     }
 
-    public function getSettingName(string $key): string {
-        $settingName = "{$this->optionName}[{$key}]";
+    public function getSettingName(string $key, string $groupName): string {
+        $settingName = "{$this->groups[$groupName]['option_name']}[{$key}]";
         error_log('Get Setting Name: ' . $settingName);
-        return $settingName;
+        return $settingName;    
     }
 
-    public function sanitize_and_validate_settings(array | null $settings = array()) : array {
+    public function sanitize_and_validate_settings(array | null $settings) : array {
         error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
         //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
+        $input = $settings ?? array();
         $output = array();
 
-        foreach ($settings as $key => $value) {
+        foreach ($input as $key => $value) {
             $sanitizedOutput = sanitize_text_field($value);
             $output[$key] = $this->validate_setting($key,$sanitizedOutput); //TODO Should we do validation on the front end to provide a better user expereience?
         }
@@ -306,23 +320,42 @@ class Settings {
         return $value;
     }
 
-    public function add_field(string $fieldName, string $fieldLabel, array $fieldRenderCallback, string $sectionKey = 'settings', string | null $pageName = null): void {
+    public function add_field(
+        string $fieldName,
+        string $fieldLabel, 
+        array $fieldRenderCallback, 
+        string $sectionKey = 'settings', 
+        string | null $pageName = null,
+        string $groupName = 'settings'): void 
+    {
         $this->fields[$fieldName] = array(
             'label' => $fieldLabel,
             'callback' => $fieldRenderCallback,
             'page' => $pageName ?? $this->menuSlug,
             'section' => $this->get_section_name($sectionKey),
+            'option_group' => $this->get_option_group_name($groupName),
         );
     }
 
     public function create_fields(): void {
-        $this->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'), );
+        $this->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'));
         $this->add_field('send2crm_api_domain', 'Send2CRM API Domain', array($this, 'send2crm_api_domain_callback'));
         $this->add_field('send2crm_js_location', 'Send2CRM JS Location', array($this, 'send2crm_js_location_callback'));
     }
 
     private function get_section_name(string $key) {
         return "{$this->pluginSlug}_{$key}_section";
+    }
+    private function get_page_name(string $key) {
+        return "{$this->pluginSlug}_{$key}_page";
+    }
+
+    private function get_option_group_name(string $key) {
+        return "{$this->pluginSlug}_{$key}_option_group";
+    }
+
+    private function get_option_name(string $key) {
+        return "{$this->pluginSlug}_{$key}_option";
     }
 
     /**
@@ -344,6 +377,18 @@ class Settings {
 
     public function create_sections(): void {
         $this->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
+    }
+
+    public function add_group(string $key, array $sanitizeAndValidateCallback): void {
+        $groupName = $this->get_option_group_name($key);
+        $this->groups[$groupName] = array(
+            'option_name' => $this->get_option_name($key),
+            'callback' => $sanitizeAndValidateCallback
+        );
+    }
+
+    public function create_groups(): void {
+        $this->add_group('settings', array($this,'sanitize_and_validate_settings'));
     }
 
     
