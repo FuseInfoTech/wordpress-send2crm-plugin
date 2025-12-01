@@ -68,7 +68,6 @@ class Settings {
         $this->optionGroup = $pluginSlug;
         $this->optionName = $pluginSlug;
         $this->fields = array();
-        $this->callbacks = array();
         $this->sections = array();
 
     }
@@ -115,13 +114,13 @@ class Settings {
 
         $this->create_sections();
 
-        foreach ($this->sections as $key => $sectionLabel) {
-            error_log('Add Setting Section: ' . $key . ' - ' . $sectionLabel);
+        foreach ($this->sections as $sectionName => $sectionDetails) {
+            error_log('Add Setting Section: ' . $sectionName . ' - ' . $sectionDetails['label']); //TODO Remove Debug statements
             add_settings_section(
-                $key,
-                $sectionLabel,
-                $this->callbacks[$key],
-                $this->menuSlug
+                $sectionName,
+                $sectionDetails['label'],
+                $sectionDetails['callback'],
+                $sectionDetails['page']
             );
         }
 
@@ -133,8 +132,8 @@ class Settings {
             add_settings_field(
                 $fieldName,
                 $fieldDetails['label'],
-                $this->callbacks[$fieldName],
-                $this->menuSlug,
+                $fieldDetails['callback'],
+                $fieldDetails['page'],
                 $fieldDetails['section']
             );
         }
@@ -307,13 +306,13 @@ class Settings {
         return $value;
     }
 
-    public function add_field(string $fieldName, string $fieldLabel, array $fieldrenderfunction, string $sectionKey = 'settings'): void {
+    public function add_field(string $fieldName, string $fieldLabel, array $fieldRenderCallback, string $sectionKey = 'settings', string | null $pageName = null): void {
         $this->fields[$fieldName] = array(
             'label' => $fieldLabel,
-            //'callback' => $fieldrenderfunction, TODO move callback into field array
-            'section' => $this->get_section_name($sectionKey)
+            'callback' => $fieldRenderCallback,
+            'page' => $pageName ?? $this->menuSlug,
+            'section' => $this->get_section_name($sectionKey),
         );
-        $this->callbacks[$fieldName] = $fieldrenderfunction;
     }
 
     public function create_fields(): void {
@@ -326,9 +325,21 @@ class Settings {
         return "{$this->pluginSlug}_{$key}_section";
     }
 
-    public function add_section(string $key , string $sectionLabel, array $callback, string | null $pageName = null): void {
-        $this->sections[$this->get_section_name($key)] = $sectionLabel;
-        $this->callbacks[$this->get_section_name($key)] = $callback;
+    /**
+     * Adds a section to the settings page.
+     * 
+     * @since   1.0.0
+     * @param   string  $key            The name of the section.
+     * @param   string  $sectionLabel   The label of the section.
+     * @param   array   $sectionRenderCallback  The callback function for rendering the section.
+     * @param   string  $pageName       The name of the page to add the section to. Defaults to the name of the menu slug.
+     */
+    public function add_section(string $key , string $sectionLabel, array $sectionRenderCallback, string | null $pageName = null): void {
+        $this->sections[$this->get_section_name($key)] = array( 
+            'label' => $sectionLabel,
+            'callback' => $sectionRenderCallback,
+            'page' => $pageName ?? $this->menuSlug,
+        );
     }
 
     public function create_sections(): void {
