@@ -47,7 +47,9 @@ class Snippet {
         
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
         $this->settings->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
-    
+        $this->settings->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'));
+        $this->settings->add_field('send2crm_api_domain', 'Send2CRM API Domain', array($this, 'send2crm_api_domain_callback'));
+        $this->settings->add_field('send2crm_js_location', 'Send2CRM JS Location', array($this, 'send2crm_js_location_callback'));
     }
 
     #region Settings API Callbacks
@@ -75,11 +77,54 @@ class Snippet {
     }
 
     /**
-     * Register all the hooks of this class.
-     *
-     * @since    1.0.0
-     * @param   $isAdmin    Whether the current request is for an administrative interface page.
-    */
+     * Callback for displaying the text input field.
+     * 
+     * @since   1.0.0
+     * @param   string  $fieldId        The ID of the field.
+     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
+     */
+    private function render_text_input(string $fieldId, string $description = ''): void {
+        error_log($fieldId);
+        // Get the current saved value 
+        $optionGroup = $this->settings->get_field($fieldId)['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        // Render the input field 
+        echo "<input type='text' id=$fieldId' name=$settingName value='$value'>";
+        if ($description != '') {
+            echo "<p class='description'>$description</p>";
+        }
+    }
+
+    /**
+     * Callback for displaying the API key setting.
+     * 
+     * @since   1.0.0
+     */
+    public function send2crm_api_key_callback(): void {
+        $fieldId = 'send2crm_api_key';
+        $this->render_text_input($fieldId, 'Enter the shared API key configured for your service in Salesforce.');
+    }
+
+    /**
+     * Callback for displaying the API domain setting.
+     * 
+     * @since   1.0.0
+     */
+    public function send2crm_api_domain_callback(): void {
+        $fieldId = 'send2crm_api_domain';
+        $this->render_text_input($fieldId, 'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.');
+    }
+
+    /**
+     * Callback for displaying the JavaScript location setting.
+     * 
+     * @since   1.0.0
+     */
+    public function send2crm_js_location_callback($hook): void {
+        $fieldId = 'send2crm_js_location';
+        $this->render_text_input($fieldId, 'Enter the location of the Send2CRM JavaScript file.');
+    }
 
     /**
      * Callback for displaying the required Settings section.
@@ -94,7 +139,12 @@ class Snippet {
     #endregion
 
     #region Public Functions
-
+    /**
+     * Register all the hooks of this class.
+     *
+     * @since    1.0.0
+     * @param   $isAdmin    Whether the current request is for an administrative interface page.
+    */
     public function initializeHooks(bool $isAdmin): void
     {
         if ($isAdmin) {
