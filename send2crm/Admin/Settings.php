@@ -194,26 +194,31 @@ class Settings {
             <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
 
             <?php
-            foreach ($this->groups as $groupName => $groupDetails) { 
-                $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'required_settings'; ?>
+            
+                $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'default_tab'; ?>
+
                 <h2 class="nav-tab-wrapper">
-                    <a href="?page=<?php echo $this->menuSlug; ?>&tab=required_settings" class="nav-tab <?php echo $activeTab === 'required_settings' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Required Settings', $this->pluginSlug); ?></a>
+                    <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
+                        <a href="?page=<?php echo $this->menuSlug; ?>&tab=<?php echo $groupDetails['tab_name']; ?>" class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>"><?php esc_html_e($groupDetails['tab_title'], $this->pluginSlug); ?></a>
+                    <?php } ?> 
                 </h2>
                 <form method="post" action="options.php"> 
-                    <?php 
-                        if ($activeTab === 'required_settings') {
-                            // Output security fields 
-                            settings_fields($groupName); 
-                            // Output sections and fields 
-                            foreach ($this->sections as $sectionName => $sectionDetails) {
-                                do_settings_sections( $sectionDetails['page'] );
+                    <?php
+                        foreach ($this->groups as $groupName => $groupDetails) { 
+                            if ($activeTab === $groupDetails['tab_name']) {
+                                // Output security fields 
+                                settings_fields($groupName); 
+                                // Output sections and fields 
+                                foreach ($this->sections as $sectionName => $sectionDetails) {
+                                    do_settings_sections( $sectionDetails['page'] );
+                                }
                             }
                         }
                         // Output save button 
                         submit_button(); 
                     ?> 
                 </form> 
-            <?php } ?> 
+            
         </div> 
         <?php 
     }
@@ -379,16 +384,19 @@ class Settings {
         $this->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
     }
 
-    public function add_group(string $key, array $sanitizeAndValidateCallback): void {
+    public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): void {
         $groupName = $this->get_option_group_name($key);
         $this->groups[$groupName] = array(
             'option_name' => $this->get_option_name($key),
-            'callback' => $sanitizeAndValidateCallback
+            'callback' => $sanitizeAndValidateCallback,
+            'tab_name' => $tabName,
+            'tab_title' => $tab_title
         );
     }
 
     public function create_groups(): void {
         $this->add_group('settings', array($this,'sanitize_and_validate_settings'));
+
     }
 
     
