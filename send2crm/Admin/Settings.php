@@ -71,7 +71,9 @@ class Settings {
         $this->fields = array();
         $this->sections = array();
         $this->groups = array();
-
+        //$this->create_groups(); //TODO refactor this so we dont need a specific function
+        $this->create_sections();
+        $this->create_fields();
     }
 
     /**
@@ -102,7 +104,7 @@ class Settings {
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
  
-        $this->create_groups();
+
         // Register the setting
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
         foreach ($this->groups as $groupName => $groupDetails) {
@@ -117,7 +119,7 @@ class Settings {
             register_setting($groupName, $groupDetails['option_name'], $registerSettingParameters);
         }   
 
-        $this->create_sections();
+
 
         foreach ($this->sections as $sectionName => $sectionDetails) {
             error_log('Add Setting Section: ' . $sectionName . ' - ' . $sectionDetails['label']); //TODO Remove Debug statements
@@ -128,9 +130,6 @@ class Settings {
                 $sectionDetails['page']
             );
         }
-
-
-        $this->create_fields();
 
         foreach ($this->fields as $fieldName => $fieldDetails) {
             error_log('Add Setting Field: ' . $fieldName . ' - ' . serialize($fieldDetails)); //TODO Remove Debug statements
@@ -285,8 +284,11 @@ class Settings {
      * @param   string  $key    The name of the setting to retrieve.
      * @return  string  The value of the setting if found, otherwise an empty string.
      */
-    public function getSetting(string $key, string $groupName = 'settings', string $default = ''): string {
+    public function getSetting(string $key, string | null $groupName = null, string $default = ''): string {
         error_log('Get Setting: ' . $key);
+        if (is_null($groupName)) {
+            $groupName = $this->fields[$key]['option_group'];
+        }
         $array = get_option($this->groups[$groupName]['option_name'], array()); //TODO fix null values
         error_log('Value returned: ' . serialize($array));
         $value = $array[$key] ?? $default;
@@ -300,28 +302,7 @@ class Settings {
         return $settingName;    
     }
 
-    public function sanitize_and_validate_settings(array | null $settings) : array {
-        error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
-        //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
-        $input = $settings ?? array();
-        $output = array();
 
-        foreach ($input as $key => $value) {
-            $sanitizedOutput = sanitize_text_field($value);
-            $output[$key] = $this->validate_setting($key,$sanitizedOutput); //TODO Should we do validation on the front end to provide a better user expereience?
-        }
-        return $output;
-    }
-
-    public function validate_setting(string $key, string $value): string {
-        error_log('Validate Setting: ' . $value); //TODO Remove Debug statements
-        //check if text input is valid otherwise return the current option value
-        if (is_numeric($value)) {
-            add_settings_error($key, $this->pluginSlug . '-message', 'Setting should not be a number. Please enter a valid value.', 'error');
-            return $this->getSetting($key);
-        }
-        return $value;
-    }
 
     public function add_field(
         string $fieldName,
@@ -392,10 +373,7 @@ class Settings {
         );
     }
 
-    public function create_groups(): void {
-        $this->add_group('settings', array($this,'sanitize_and_validate_settings'));
 
-    }
 
     
 

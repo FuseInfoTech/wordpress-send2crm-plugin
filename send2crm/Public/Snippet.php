@@ -44,6 +44,33 @@ class Snippet {
         error_log('Initializing Public facing Send2CRM Plugin'); //TODO Remove Debug statements
         $this->settings = $settings;
         $this->version = $version;
+        
+        $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
+
+    
+    }
+
+    public function sanitize_and_validate_settings(array | null $settings) : array {
+        error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
+        //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
+        $input = $settings ?? array();
+        $output = array();
+
+        foreach ($input as $key => $value) {
+            $sanitizedOutput = sanitize_text_field($value);
+            $output[$key] = $this->validate_setting($key,$sanitizedOutput); //TODO Should we do validation on the front end to provide a better user expereience?
+        }
+        return $output;
+    }
+
+    public function validate_setting(string $key, string $value): string {
+        error_log('Validate Setting: ' . $value); //TODO Remove Debug statements
+        //check if text input is valid otherwise return the current option value
+        if (is_numeric($value)) {
+            add_settings_error($key, $this->pluginSlug . '-message', 'Setting should not be a number. Please enter a valid value.', 'error');
+            return $this->getSetting($key);
+        }
+        return $value;
     }
 
     /**
@@ -55,7 +82,7 @@ class Snippet {
     public function initializeHooks(bool $isAdmin): void
     {
         if ($isAdmin) {
-            error_log('Skipping Snippet Hooks for Admin Page');
+            error_log('Skipping Snippet Hooks for Admin Page'); //TODO Remove Debug statements;
             return;
         }
         error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
