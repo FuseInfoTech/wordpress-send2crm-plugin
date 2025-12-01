@@ -49,6 +49,7 @@ class Settings {
 
     private array $fields;
     private array $callbacks;
+    private array $sections;
 
 
     /**
@@ -68,6 +69,7 @@ class Settings {
         $this->optionName = $pluginSlug;
         $this->fields = array();
         $this->callbacks = array();
+        $this->sections = array();
 
     }
 
@@ -111,24 +113,29 @@ class Settings {
 
         register_setting($this->optionGroup, $this->optionName, $registerSettingParameters);
 
-        // Add the settings section
-        add_settings_section(
-            'send2crm_settings_section',
-            'Required Settings',
-            array($this,'send2crm_settings_section'),
-            'send2crm'
-        );
+        $this->create_sections();
+
+        foreach ($this->sections as $key => $sectionLabel) {
+            error_log('Add Setting Section: ' . $key . ' - ' . $sectionLabel);
+            add_settings_section(
+                $key,
+                $sectionLabel,
+                $this->callbacks[$key],
+                $this->menuSlug
+            );
+        }
+
 
         $this->create_fields();
 
-        foreach ($this->fields as $fieldName => $fieldLabel) {
-            error_log('Add Setting Field: ' . $fieldName . ' - ' . $fieldLabel);
+        foreach ($this->fields as $fieldName => $fieldDetails) {
+            error_log('Add Setting Field: ' . $fieldName . ' - ' . serialize($fieldDetails)); //TODO Remove Debug statements
             add_settings_field(
                 $fieldName,
-                $fieldLabel,
+                $fieldDetails['label'],
                 $this->callbacks[$fieldName],
-                'send2crm',
-                'send2crm_settings_section'
+                $this->menuSlug,
+                $fieldDetails['section']
             );
         }
     }
@@ -300,15 +307,36 @@ class Settings {
         return $value;
     }
 
-    public function add_field(string $fieldName, string $fieldLabel, array $fieldrenderfunction) {
-        $this->fields[$fieldName] = $fieldLabel;
+    public function add_field(string $fieldName, string $fieldLabel, array $fieldrenderfunction, string $sectionKey = 'settings'): void {
+        $this->fields[$fieldName] = array(
+            'label' => $fieldLabel,
+            //'callback' => $fieldrenderfunction, TODO move callback into field array
+            'section' => $this->get_section_name($sectionKey)
+        );
         $this->callbacks[$fieldName] = $fieldrenderfunction;
     }
 
-    public function create_fields() {
-        $this->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'));
+    public function create_fields(): void {
+        $this->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'), );
         $this->add_field('send2crm_api_domain', 'Send2CRM API Domain', array($this, 'send2crm_api_domain_callback'));
         $this->add_field('send2crm_js_location', 'Send2CRM JS Location', array($this, 'send2crm_js_location_callback'));
     }
+
+    private function get_section_name(string $key) {
+        return "{$this->pluginSlug}_{$key}_section";
+    }
+
+    public function add_section(string $key , string $sectionLabel, array $callback, string | null $pageName = null): void {
+        $this->sections[$this->get_section_name($key)] = $sectionLabel;
+        $this->callbacks[$this->get_section_name($key)] = $callback;
+    }
+
+    public function create_sections(): void {
+        $this->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
+    }
+
+    
+
+    
 
 }
