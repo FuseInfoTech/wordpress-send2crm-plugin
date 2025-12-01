@@ -71,8 +71,7 @@ class Settings {
         $this->fields = array();
         $this->sections = array();
         $this->groups = array();
-        //$this->create_groups(); //TODO refactor this so we dont need a specific function
-        $this->create_sections();
+        
         $this->create_fields();
     }
 
@@ -220,15 +219,7 @@ class Settings {
         <?php 
     }
 
-    /**
-     * Callback for displaying the required Settings section.
-     * 
-     * @since   1.0.0
-     */
-    public function send2crm_settings_section(): void {
-        error_log('Send2CRM Settings Section');
-        echo '<p>The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.</p>';
-    }
+
 
     /**
      * Callback for displaying the API key setting.
@@ -357,10 +348,6 @@ class Settings {
             'callback' => $sectionRenderCallback,
             'page' => $pageName,
         );
-    }
-
-    public function create_sections(): void {
-        $this->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
     }
 
     public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): void {

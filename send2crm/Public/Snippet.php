@@ -46,10 +46,11 @@ class Snippet {
         $this->version = $version;
         
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
-
+        $this->settings->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
     
     }
 
+    #region Settings API Callbacks
     public function sanitize_and_validate_settings(array | null $settings) : array {
         error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
         //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
@@ -79,6 +80,21 @@ class Snippet {
      * @since    1.0.0
      * @param   $isAdmin    Whether the current request is for an administrative interface page.
     */
+
+    /**
+     * Callback for displaying the required Settings section.
+     * 
+     * @since   1.0.0
+     */
+    public function send2crm_settings_section(): void {
+        error_log('Send2CRM Settings Section');
+        echo '<p>The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.</p>';
+
+    }
+    #endregion
+
+    #region Public Functions
+
     public function initializeHooks(bool $isAdmin): void
     {
         if ($isAdmin) {
@@ -90,6 +106,8 @@ class Snippet {
         add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
         
     }
+
+
 
     /**
      * Callback for inserting the Send2CRM snippet in the header section of the public facing site.
@@ -124,5 +142,7 @@ class Snippet {
         error_log('Snippet enqueued at' . $snippetUrl);
         wp_localize_script( $snippetId, 'snippetData', $snippetData); 
     }
+
+    #endregion
 
 }
