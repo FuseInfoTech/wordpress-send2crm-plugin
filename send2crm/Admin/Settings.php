@@ -125,7 +125,7 @@ class Settings {
                 $sectionName,
                 $sectionDetails['label'],
                 $sectionDetails['callback'],
-                $sectionDetails['page']
+                $sectionDetails['page'],
             );
         }
 
@@ -223,8 +223,8 @@ class Settings {
     }
 
     public function get_section(string $key) {
-        $sectionName = $this->get_section_name($key);
-        return $this->sections[$sectionName];
+        //$sectionName = $this->get_section_name($key);
+        return $this->sections[$key];
     }
 
     /**
@@ -331,7 +331,7 @@ class Settings {
         array $fieldRenderCallback,
         string $description = '', 
         string $sectionKey = 'settings', 
-        string $pageName = 'default_tab',
+        string $pageName = 'default_tab', //TODO Should this really be called pageName or tabName. Is there value in having a page that isn't a tab since the render treates a tab as a page but it is still called a page.
         string $groupName = 'settings',
     ): void 
     {
