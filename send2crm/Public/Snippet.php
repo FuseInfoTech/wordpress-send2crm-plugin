@@ -52,7 +52,6 @@ class Snippet {
         $this->settings->add_section(
             'settings', 
             'Required Settings', 
-            array($this, 'render_section'),
             'The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.'
         );
         $this->settings->add_field(
@@ -83,7 +82,6 @@ class Snippet {
         $this->settings->add_section(
             'logging', 
             'Detailed Logging', 
-            array($this, 'render_section'), 
             'Settings for controlling logging message output for Send2CRM JavaScript.', 
             $customizeTabName
         );
@@ -107,7 +105,12 @@ class Snippet {
         );
         
         //Create section for general settings
-        //$this->settings->add_section('service', 'Send2CRM Service', array($this, 'service_section'), $customizeTabName);
+        $this->settings->add_section(
+            'service', 
+            'Send2CRM Service',
+            'General Settings Related to the operation of the Send2CRM Service',
+             $customizeTabName
+        );
         //sessionTimeout
         //syncFrequency
         //syncFrequencySecondary
@@ -116,13 +119,22 @@ class Snippet {
         //originHost
 
         //Create section for cookies settings
-        //$this->settings->add_section('cookies', 'Cookies', array($this, 'cookies_section'), $customizeTabName);
+        $this->settings->add_section(
+            'cookies', 
+            'Cookies', 
+            'Settings related to browser cookies and their behavior.', 
+            $customizeTabName);
         //personalizationCookie
         //utmCookie
         //idCookieDomain
 
         //Create section for form settings
-        //$this->settings->add_section('form', 'Form', array($this, 'form_section'), $customizeTabName);
+        $this->settings->add_section(
+            'form', 
+            'Form', 
+            'Settings related to the behavior of forms that submit data to Send2CRM.', 
+            $customizeTabName
+        );
         //formSelector
         //maxFileSize
         //formFailMessage
@@ -134,7 +146,12 @@ class Snippet {
 
 
         // Create section for advanced settings
-        //$this->settings->add_section('advanced', 'Advanced', array($this, 'advanced_section'), $customizeTabName);
+        $this->settings->add_section(
+            'advanced', 
+            'Advanced', 
+            'Settings related to advanced configuration of Send2CRM.', 
+            $customizeTabName
+        );
         //$this->settings->add_field()
         //ipLookup
         //ipFields
@@ -226,20 +243,6 @@ class Snippet {
     public function log_prefix_callback(): void {
         $fieldId = 'log_prefix';
         $this->render_text_input($fieldId);
-    }
-
-
-    public function render_section(array $arguments): void {
-        $sectionId = $arguments['id'];
-        $sectionDetails = $this->settings->get_section($sectionId);
-        if (empty($sectionDetails)) {
-            return;
-        }
-        $description = $sectionDetails['description'];
-        if (empty($description)) {
-            return;
-        }
-        echo "<p>$description</p>";
     }
     #endregion
 

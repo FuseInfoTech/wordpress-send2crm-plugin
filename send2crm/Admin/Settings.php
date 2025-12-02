@@ -360,16 +360,32 @@ class Settings {
     public function add_section(
         string $key,
         string $sectionLabel, 
-        array  $sectionRenderCallback, 
         string $description = '', 
-        string $pageName = 'default_tab'
+        string $pageName = 'default_tab',
+        array | null  $sectionRenderCallback = null, 
     ): void {
+        if (is_null($sectionRenderCallback)) {
+            $sectionRenderCallback = array($this, 'default_render_section');
+        }
         $this->sections[$this->get_section_name($key)] = array( 
             'label' => $sectionLabel,
             'callback' => $sectionRenderCallback,
             'description' => $description,
             'page' => $pageName,
         );
+    }
+
+    public function default_render_section(array $arguments): void {
+        $sectionId = $arguments['id'];
+        $sectionDetails = $this->sections[$sectionId];
+        if (empty($sectionDetails)) {
+            return; 
+        }
+        $description = $sectionDetails['description'];
+        if (empty($description)) {
+            return;
+        }
+        echo "<p>$description</p>";
     }
 
     /**
