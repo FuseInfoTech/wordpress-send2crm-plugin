@@ -49,7 +49,12 @@ class Snippet {
 
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
-        $this->settings->add_section('settings', 'Salesforce Access', array($this, 'send2crm_settings_section'));
+        $this->settings->add_section(
+            'settings', 
+            'Salesforce Access', 
+            array($this, 'send2crm_settings_section'),
+            'The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.'
+        );
         $this->settings->add_field(
             'send2crm_api_key',
             'Send2CRM API Key',
@@ -75,7 +80,13 @@ class Snippet {
         $this->settings->add_group($customizeGroupName, array($this,'sanitize_and_validate_settings'), $customizeTabName, 'Customize');
 
         //Create section for logging settings such as debug messages
-        $this->settings->add_section('logging', 'Detailed Logging', array($this, 'logging_section'), $customizeTabName);
+        $this->settings->add_section(
+            'logging', 
+            'Detailed Logging', 
+            array($this, 'logging_section'), 
+            'Settings for controlling logging message output for Send2CRM JavaScript.', 
+            $customizeTabName
+        );
         $this->settings->add_field(
             'debug_enabled', 
             'Enable Detailed Log Messages',
@@ -170,10 +181,11 @@ class Snippet {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input type='text' id=$fieldId' name=$settingName value='$value'>";
-        if ($description != '') {
-            echo "<p class='description'>$description</p>";
+        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        if (empty($description)) {
+            return;
         }
+        echo "<p class='description'>$description</p>";
     }
 
     /**
@@ -217,7 +229,15 @@ class Snippet {
     }
 
 
-    public function render_section(string $description): void {
+    public function render_section(string $sectionId): void {
+        $sectionDetails = $this->settings->get_section($sectionId);
+        if (empty($sectionDetails)) {
+            return;
+        }
+        $description = $sectionDetails['description'];
+        if (empty($description)) {
+            return;
+        }
         echo "<p>$description</p>";
     }
     /**
@@ -227,12 +247,13 @@ class Snippet {
      */
     public function send2crm_settings_section(): void {
         error_log('Send2CRM Settings Section');
-        $this->render_section('The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.');
+        $this->render_section('settings');
+    
     }
 
     public function logging_section(): void {
         //Describe the Send2CRM settings for controlling logs and debug
-        $this->render_section('Settings for controlling logging message output for Send2CRM JavaScript.');
+        $this->render_section('logging');
     }
 
 

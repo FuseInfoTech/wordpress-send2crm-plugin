@@ -206,7 +206,7 @@ class Settings {
                                 // Output security fields 
                                 settings_fields($groupName); 
                                 // Output sections and fields 
-                                    do_settings_sections( $groupDetails['tab_name'] );
+                                do_settings_sections( $groupDetails['tab_name'] );
                             }
                         }
                         // Output save button 
@@ -220,6 +220,11 @@ class Settings {
 
     public function get_field(string $key) {
         return $this->fields[$key];
+    }
+
+    public function get_section(string $key) {
+        $sectionName = $this->get_section_name($key);
+        return $this->sections[$sectionName];
     }
 
     /**
@@ -352,10 +357,17 @@ class Settings {
      */
 
 
-    public function add_section(string $key , string $sectionLabel, array $sectionRenderCallback, string $pageName = 'default_tab'): void {
+    public function add_section(
+        string $key,
+        string $sectionLabel, 
+        array  $sectionRenderCallback, 
+        string $description = '', 
+        string $pageName = 'default_tab'
+    ): void {
         $this->sections[$this->get_section_name($key)] = array( 
             'label' => $sectionLabel,
             'callback' => $sectionRenderCallback,
+            'description' => $description,
             'page' => $pageName,
         );
     }
