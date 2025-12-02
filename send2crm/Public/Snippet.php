@@ -60,11 +60,43 @@ class Snippet {
         $this->settings->add_group($customizeGroupName, array($this,'sanitize_and_validate_settings'), $customizeTabName, 'Customize');
 
         //Create section for logging settings such as debug messages
-        $this->settings->add_section('logging', 'Detailed Logging', array($this, 'logging_section'), $customizeTabName,);
+        $this->settings->add_section('logging', 'Detailed Logging', array($this, 'logging_section'), $customizeTabName);
         $this->settings->add_field('debug_enabled', 'Enable Detailed Log Messages', array($this, 'debug_enabled_callback'), 'logging', $customizeTabName, $customizeGroupName);
         $this->settings->add_field('log_prefix', 'Log Prefix', array($this, 'log_prefix_callback'), 'logging', $customizeTabName, $customizeGroupName);
-        $this->settings->add_section('advanced', 'Advanced', array($this, 'send2crm_settings_section'), $customizeTabName,);
         
+        //Create section for general settings
+        //$this->settings->add_section('service', 'Send2CRM Service', array($this, 'service_section'), $customizeTabName);
+        //sessionTimeout
+        //syncFrequency
+        //syncFrequencySecondary
+        //ignoreBehavior
+        //disableAutoEvents
+        //originHost
+
+        //Create section for cookies settings
+        //$this->settings->add_section('cookies', 'Cookies', array($this, 'cookies_section'), $customizeTabName);
+        //personalizationCookie
+        //utmCookie
+        //idCookieDomain
+
+        //Create section for form settings
+        //$this->settings->add_section('form', 'Form', array($this, 'form_section'), $customizeTabName);
+        //formSelector
+        //maxFileSize
+        //formFailMessage
+        //formIdAttributes
+        //formMinTime
+        //formRateCount
+        //formRateTime
+        //formListenOnButton
+
+
+        // Create section for advanced settings
+        //$this->settings->add_section('advanced', 'Advanced', array($this, 'advanced_section'), $customizeTabName);
+        //$this->settings->add_field()
+        //ipLookup
+        //ipFields
+        //syncOrigins
     }
 
     #region Settings API Callbacks
@@ -226,7 +258,6 @@ class Snippet {
         ));
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         error_log('Snippet enqueued at' . $snippetUrl);
-        //wp_localize_script( $snippetId, 'snippetData', $snippetData); 
         wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
     }
 
