@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) exit;
 
 #region Constants
 define('SNIPPET_FILENAME', 'js/standard-snippet.js');
+define('ADDITIONAL_SETTINGS_FILENAME', 'js/additional-settings.js');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -45,11 +46,25 @@ class Snippet {
         $this->settings = $settings;
         $this->version = $version;
         
+
+        //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
-        $this->settings->add_section('settings', 'Required Settings', array($this, 'send2crm_settings_section'));
+        $this->settings->add_section('settings', 'Salesforce Access', array($this, 'send2crm_settings_section'));
         $this->settings->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'));
         $this->settings->add_field('send2crm_api_domain', 'Send2CRM API Domain', array($this, 'send2crm_api_domain_callback'));
         $this->settings->add_field('send2crm_js_location', 'Send2CRM JS Location', array($this, 'send2crm_js_location_callback'));
+
+        //Create additional settings groups and sections
+        $customizeTabName = 'custom_tab';
+        $customizeGroupName = 'customize';
+        $this->settings->add_group($customizeGroupName, array($this,'sanitize_and_validate_settings'), $customizeTabName, 'Customize');
+
+        //Create section for logging settings such as debug messages
+        $this->settings->add_section('logging', 'Detailed Logging', array($this, 'logging_section'), $customizeTabName,);
+        $this->settings->add_field('debug_enabled', 'Enable Detailed Log Messages', array($this, 'debug_enabled_callback'), 'logging', $customizeTabName, $customizeGroupName);
+
+        $this->settings->add_section('advanced', 'Advanced', array($this, 'send2crm_settings_section'), $customizeTabName,);
+        
     }
 
     #region Settings API Callbacks
@@ -121,11 +136,20 @@ class Snippet {
      * 
      * @since   1.0.0
      */
-    public function send2crm_js_location_callback($hook): void {
+    public function send2crm_js_location_callback(): void {
         $fieldId = 'send2crm_js_location';
         $this->render_text_input($fieldId, 'Enter the location of the Send2CRM JavaScript file.');
     }
 
+    public function debug_enabled_callback(): void {
+        $fieldId = 'debug_enabled';
+        $this->render_text_input($fieldId, 'If true, then Send2CRM will output detailed messages to the browser console.');
+    }
+
+
+    public function render_section(string $description): void {
+        echo "<p>$description </p>";
+    }
     /**
      * Callback for displaying the required Settings section.
      * 
@@ -133,9 +157,15 @@ class Snippet {
      */
     public function send2crm_settings_section(): void {
         error_log('Send2CRM Settings Section');
-        echo '<p>The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.</p>';
-
+        $this->render_section('The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.');
     }
+
+    public function logging_section(): void {
+        //Describe the Send2CRM settings for controlling logs and debug
+        $this->render_section('Settings for controlling logging message output for Send2CRM JavaScript.');
+    }
+
+
     #endregion
 
     #region Public Functions
@@ -154,7 +184,7 @@ class Snippet {
         error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
         add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
-        
+        add_action('wp_enqueue_scripts',array($this,'applyAdditionalSettings'));
     }
 
 
@@ -182,15 +212,45 @@ class Snippet {
             error_log('Snippet could not be registered - Send2CRM will not be activated.');
             return;
         } 
+        
 
-        $snippetData = array(
+        $snippetJson = json_encode(array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
             'js_location' => $jsLocation . "?ver={$this->version}"
-        );
+        ));
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         error_log('Snippet enqueued at' . $snippetUrl);
-        wp_localize_script( $snippetId, 'snippetData', $snippetData); 
+        //wp_localize_script( $snippetId, 'snippetData', $snippetData); 
+        wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
+    }
+
+    public function applyAdditionalSettings() {
+        error_log('Apply Additional Settings');
+        $debugEnabled = $this->settings->getSetting('debug_enabled');
+
+        if (empty($debugEnabled)) {
+            error_log('No Additional Settings found, skipping.');
+            return;
+        }
+        $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
+        $settingJsId = "{$this->settings->pluginSlug}-settings";
+        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $this->version, false ) === false)
+        {
+            error_log('Additional Settings Javascript could not be registered - No Additional Settings will be applied.');
+            return;
+        }
+
+        $settingsJson = json_encode(array(
+            'debug' => filter_var($debugEnabled, FILTER_VALIDATE_BOOLEAN),
+        ));
+
+        
+
+        wp_enqueue_script($settingJsId, $settingJsUrl, array(), $this->version, false);
+        error_log('Additional Settings Javascript enqueued at' . $settingJsUrl);
+        
+        wp_add_inline_script( $settingJsId, "const additionalSettings = {$settingsJson};", 'before');
     }
 
     #endregion

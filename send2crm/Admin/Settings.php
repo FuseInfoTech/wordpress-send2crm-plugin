@@ -256,33 +256,7 @@ class Settings {
     }
 
 
-    /**
-     * Adds a field to the settings page.
-     * 
-     * @since   1.0.0
-     * @param   string  $fieldName      The name of the field.
-     * @param   string  $fieldLabel     The label of the field.
-     * @param   array   $fieldRenderCallback   The callback function for rendering the field.
-     * @param   string  $sectionKey     The name of the section to add the field to.
-     * @param   string  $pageName       The name of the page to add the field to.
-     * @param   string  $groupName      The name of the option group to add the field to.
-     */
-    public function add_field(
-        string $fieldName,
-        string $fieldLabel, 
-        array $fieldRenderCallback, 
-        string $sectionKey = 'settings', 
-        string $pageName = 'default_tab',
-        string $groupName = 'settings'): void 
-    {
-        $this->fields[$fieldName] = array(
-            'label' => $fieldLabel,
-            'callback' => $fieldRenderCallback,
-            'page' => $pageName,
-            'section' => $this->get_section_name($sectionKey),
-            'option_group' => $this->get_option_group_name($groupName),
-        );
-    }
+
 
 
     /**
@@ -328,6 +302,34 @@ class Settings {
      */
     private function get_option_name(string $key) {
         return "{$this->pluginSlug}_{$key}_option";
+    }
+
+    /**
+     * Adds a field to the settings page.
+     * 
+     * @since   1.0.0
+     * @param   string  $fieldName      The name of the field.
+     * @param   string  $fieldLabel     The label of the field.
+     * @param   array   $fieldRenderCallback   The callback function for rendering the field.
+     * @param   string  $sectionKey     The name of the section to add the field to.
+     * @param   string  $pageName       The name of the page to add the field to.
+     * @param   string  $groupName      The name of the option group to add the field to.
+     */
+    public function add_field(
+        string $fieldName,
+        string $fieldLabel, 
+        array $fieldRenderCallback, 
+        string $sectionKey = 'settings', 
+        string $pageName = 'default_tab',
+        string $groupName = 'settings'): void 
+    {
+        $this->fields[$fieldName] = array(
+            'label' => $fieldLabel,
+            'callback' => $fieldRenderCallback,
+            'page' => $pageName,
+            'section' => $this->get_section_name($sectionKey),
+            'option_group' => $this->get_option_group_name($groupName),
+        );
     }
 
     /**
