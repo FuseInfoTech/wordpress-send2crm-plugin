@@ -50,9 +50,24 @@ class Snippet {
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
         $this->settings->add_section('settings', 'Salesforce Access', array($this, 'send2crm_settings_section'));
-        $this->settings->add_field('send2crm_api_key', 'Send2CRM API Key', array($this, 'send2crm_api_key_callback'));
-        $this->settings->add_field('send2crm_api_domain', 'Send2CRM API Domain', array($this, 'send2crm_api_domain_callback'));
-        $this->settings->add_field('send2crm_js_location', 'Send2CRM JS Location', array($this, 'send2crm_js_location_callback'));
+        $this->settings->add_field(
+            'send2crm_api_key',
+            'Send2CRM API Key',
+            array($this, 'send2crm_api_key_callback'),
+            'Enter the shared API key configured for your service in Salesforce.'
+        );
+        $this->settings->add_field(
+            'send2crm_api_domain',
+            'Send2CRM API Domain',
+            array($this, 'send2crm_api_domain_callback'),
+            'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.'
+        );
+        $this->settings->add_field(
+            'send2crm_js_location',
+            'Send2CRM JS Location',
+            array($this, 'send2crm_js_location_callback'),
+            'Enter the location of the Send2CRM JavaScript file.'
+        );
 
         //Create additional settings groups and sections
         $customizeTabName = 'custom_tab';
@@ -61,8 +76,24 @@ class Snippet {
 
         //Create section for logging settings such as debug messages
         $this->settings->add_section('logging', 'Detailed Logging', array($this, 'logging_section'), $customizeTabName);
-        $this->settings->add_field('debug_enabled', 'Enable Detailed Log Messages', array($this, 'debug_enabled_callback'), 'logging', $customizeTabName, $customizeGroupName);
-        $this->settings->add_field('log_prefix', 'Log Prefix', array($this, 'log_prefix_callback'), 'logging', $customizeTabName, $customizeGroupName);
+        $this->settings->add_field(
+            'debug_enabled', 
+            'Enable Detailed Log Messages',
+            array($this, 'debug_enabled_callback'), 
+            'If true, then Send2CRM will output detailed messages to the browser console.', 
+            'logging', 
+            $customizeTabName, 
+            $customizeGroupName
+        );
+        $this->settings->add_field(
+            'log_prefix',
+            'Log Prefix', 
+            array($this, 'log_prefix_callback'), 
+            'Enter a prefix for log messages, that will display before any log messages from Send2CRM.js', 
+            'logging', 
+            $customizeTabName, 
+            $customizeGroupName
+        );
         
         //Create section for general settings
         //$this->settings->add_section('service', 'Send2CRM Service', array($this, 'service_section'), $customizeTabName);
@@ -130,12 +161,14 @@ class Snippet {
      * @param   string  $fieldId        The ID of the field.
      * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
      */
-    private function render_text_input(string $fieldId, string $description = ''): void {
+    private function render_text_input(string $fieldId): void {
         error_log($fieldId);
+        $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
-        $optionGroup = $this->settings->get_field($fieldId)['option_group'];
+        $optionGroup = $fieldDetails['option_group'];
         $value = $this->settings->getSetting($fieldId,$optionGroup); 
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
         // Render the input field 
         echo "<input type='text' id=$fieldId' name=$settingName value='$value'>";
         if ($description != '') {
@@ -150,7 +183,7 @@ class Snippet {
      */
     public function send2crm_api_key_callback(): void {
         $fieldId = 'send2crm_api_key';
-        $this->render_text_input($fieldId, 'Enter the shared API key configured for your service in Salesforce.');
+        $this->render_text_input($fieldId);
     }
 
     /**
@@ -160,7 +193,7 @@ class Snippet {
      */
     public function send2crm_api_domain_callback(): void {
         $fieldId = 'send2crm_api_domain';
-        $this->render_text_input($fieldId, 'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.');
+        $this->render_text_input($fieldId);
     }
 
     /**
@@ -170,22 +203,22 @@ class Snippet {
      */
     public function send2crm_js_location_callback(): void {
         $fieldId = 'send2crm_js_location';
-        $this->render_text_input($fieldId, 'Enter the location of the Send2CRM JavaScript file.');
+        $this->render_text_input($fieldId);
     }
 
     public function debug_enabled_callback(): void {
         $fieldId = 'debug_enabled';
-        $this->render_text_input($fieldId, 'If true, then Send2CRM will output detailed messages to the browser console.');
+        $this->render_text_input($fieldId);
     }
 
     public function log_prefix_callback(): void {
         $fieldId = 'log_prefix';
-        $this->render_text_input($fieldId, 'Enter a prefix for log messages, that will display before any log messages from Send2CRM.js');
+        $this->render_text_input($fieldId);
     }
 
 
     public function render_section(string $description): void {
-        echo "<p>$description </p>";
+        echo "<p>$description</p>";
     }
     /**
      * Callback for displaying the required Settings section.

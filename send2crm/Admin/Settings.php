@@ -232,8 +232,13 @@ class Settings {
     public function getSetting(string $key, string | null $groupName = null, string $default = ''): string {
         error_log('Get Setting: ' . $key);
         if (is_null($groupName)) {
-            $groupName = $this->fields[$key]['option_group'];
-        }
+            $fieldDetails = $this->fields[$key] ?? null;
+            if (is_null($fieldDetails)) {
+                error_log( "Field {$key} not found returning '{$default}'" );
+                return $default;
+            }
+            $groupName = $fieldDetails['option_group'] ?? $this->get_option_group_name('settings');
+        }    
         $array = get_option($this->groups[$groupName]['option_name'], array()); //TODO fix null values
         error_log('Value returned: ' . serialize($array));
         $value = $array[$key] ?? $default;
@@ -318,10 +323,12 @@ class Settings {
     public function add_field(
         string $fieldName,
         string $fieldLabel, 
-        array $fieldRenderCallback, 
+        array $fieldRenderCallback,
+        string $description = '', 
         string $sectionKey = 'settings', 
         string $pageName = 'default_tab',
-        string $groupName = 'settings'): void 
+        string $groupName = 'settings',
+    ): void 
     {
         $this->fields[$fieldName] = array(
             'label' => $fieldLabel,
@@ -329,7 +336,9 @@ class Settings {
             'page' => $pageName,
             'section' => $this->get_section_name($sectionKey),
             'option_group' => $this->get_option_group_name($groupName),
+            'description' => $description
         );
+        error_log('Field added: ' . serialize($this->fields[$fieldName]));
     }
 
     /**
