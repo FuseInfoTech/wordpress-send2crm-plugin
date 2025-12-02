@@ -62,7 +62,7 @@ class Snippet {
         //Create section for logging settings such as debug messages
         $this->settings->add_section('logging', 'Detailed Logging', array($this, 'logging_section'), $customizeTabName,);
         $this->settings->add_field('debug_enabled', 'Enable Detailed Log Messages', array($this, 'debug_enabled_callback'), 'logging', $customizeTabName, $customizeGroupName);
-
+        $this->settings->add_field('log_prefix', 'Log Prefix', array($this, 'log_prefix_callback'), 'logging', $customizeTabName, $customizeGroupName);
         $this->settings->add_section('advanced', 'Advanced', array($this, 'send2crm_settings_section'), $customizeTabName,);
         
     }
@@ -144,6 +144,11 @@ class Snippet {
     public function debug_enabled_callback(): void {
         $fieldId = 'debug_enabled';
         $this->render_text_input($fieldId, 'If true, then Send2CRM will output detailed messages to the browser console.');
+    }
+
+    public function log_prefix_callback(): void {
+        $fieldId = 'log_prefix';
+        $this->render_text_input($fieldId, 'Enter a prefix for log messages, that will display before any log messages from Send2CRM.js');
     }
 
 
@@ -229,10 +234,10 @@ class Snippet {
         error_log('Apply Additional Settings');
         $debugEnabled = $this->settings->getSetting('debug_enabled');
 
-        if (empty($debugEnabled)) {
+/*         if (empty($debugEnabled)) {
             error_log('No Additional Settings found, skipping.');
             return;
-        }
+        } */
         $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
         $settingJsId = "{$this->settings->pluginSlug}-settings";
         if (wp_register_script( $settingJsId, $settingJsUrl, array(), $this->version, false ) === false)
@@ -241,16 +246,43 @@ class Snippet {
             return;
         }
 
-        $settingsJson = json_encode(array(
-            'debug' => filter_var($debugEnabled, FILTER_VALIDATE_BOOLEAN),
-        ));
+        $settingsArray = array();
 
-        
+        $this->addSettingIfNotEmpty($settingsArray,'debug','debug_enabled',FILTER_VALIDATE_BOOLEAN);
+        $this->addSettingIfNotEmpty($settingsArray,'logPrefix','log_prefix');
+        $this->addSettingIfNotEmpty($settingsArray,'personalizationCookie','personalization_cookie');
+        $this->addSettingIfNotEmpty($settingsArray,'sessionTimeout','session_timeout');
+        $this->addSettingIfNotEmpty($settingsArray,'syncFrequency','sync_frequency');
+        $this->addSettingIfNotEmpty($settingsArray,'syncFrequencySecondary','sync_frequency_secondary');
+        $this->addSettingIfNotEmpty($settingsArray,'formSelector','form_selector');
+        $this->addSettingIfNotEmpty($settingsArray,'maxFileSize','max_file_size');
+        $this->addSettingIfNotEmpty($settingsArray,'formFailMessage','form_fail_message');
+        $this->addSettingIfNotEmpty($settingsArray,'formIdAttributes','form_id_attributes');
+        $this->addSettingIfNotEmpty($settingsArray,'formMinTime','form_min_time');
+        $this->addSettingIfNotEmpty($settingsArray,'formRateCount','form_rate_count');
+        $this->addSettingIfNotEmpty($settingsArray,'formRateTime','form_rate_time');
+        $this->addSettingIfNotEmpty($settingsArray,'formListenOnButton','form_listen_on_button');
+        $this->addSettingIfNotEmpty($settingsArray,'maxStorage','max_storage');
+        $this->addSettingIfNotEmpty($settingsArray,'utmCookie','utm_cookie');
+        $this->addSettingIfNotEmpty($settingsArray,'idCookieDomain','id_cookie_domain');
+        $this->addSettingIfNotEmpty($settingsArray,'ignoreBehavior','ignore_behavior');
+        $this->addSettingIfNotEmpty($settingsArray,'disableAutoEvents','disable_auto_events');
+        $this->addSettingIfNotEmpty($settingsArray,'originHost','origin_host');
 
         wp_enqueue_script($settingJsId, $settingJsUrl, array(), $this->version, false);
         error_log('Additional Settings Javascript enqueued at' . $settingJsUrl);
-        
+        $settingsJson = json_encode($settingsArray);
         wp_add_inline_script( $settingJsId, "const additionalSettings = {$settingsJson};", 'before');
+    }
+
+    private function addSettingIfNotEmpty(array &$settings, string $key, string $fieldId,  $filter = null) {
+        $value = $this->settings->getSetting($fieldId);
+        if ($value !== array() && empty($value) === false) {
+            if (isset($filter)) {
+                $value = filter_var($value, $filter);
+            }
+            $settings[$key] = $value;
+        }
     }
 
     #endregion
