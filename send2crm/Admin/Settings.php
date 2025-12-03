@@ -34,8 +34,6 @@ class Settings {
      */
     private string $menuSlug;
 
-
-
     /**
      * The Name to use for the Settings Page, Menu, Title
      *
@@ -43,21 +41,33 @@ class Settings {
      */
     private string $menuName;
 
-    private string $optionGroup;
-    private string $optionName;
-
-
+    /**
+     * The array of settings fields used for generating Setting API fields for the Settings page.
+     * 
+     * @since    1.0.0
+     */
     private array $fields;
-    private array $callbacks;
-    private array $sections;
-    private array $groups;
 
+    /**
+     * The array of settings sections used for generating Setting API sections for the Settings page.
+     *   
+     * @since    1.0.0
+     */
+    private array $sections;
+
+    /**
+     * The array of option groups used for generating Setting API groups for the Settings page.
+     *   
+     * @since    1.0.0
+     */
+    private array $groups;
 
     /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
      * @param    $pluginSlug       The name of this plugin.
+     * @param    $menuName         The name to use for the Settings Page, Menu, Title
      */
     public function __construct(string $pluginSlug, string $menuName)
     {
@@ -65,9 +75,6 @@ class Settings {
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
         $this->menuName = $menuName;
-        //TODO Currently we are just using the plugin slug as the option name and group but we'll move to allowing separate groups soon
-        $this->optionGroup = $pluginSlug;
-        $this->optionName = $pluginSlug;
         $this->fields = array();
         $this->sections = array();
         $this->groups = array();
@@ -183,13 +190,8 @@ class Settings {
         // check if the user have submitted the settings. Wordpress will add the "settings-updated" $_GET parameter to the url
         if (isset($_GET['settings-updated']))
         {
-            // Add settings saved message with the class of "updated"
             add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', 'Settings saved.', 'success');
         }
-
-        // Show error/update messages
-        //settings_errors($this->pluginSlug);
-
 
         error_log('Displaying Setting Page from Callback'); //TODO Remove Debug statements
         ?>
@@ -224,13 +226,32 @@ class Settings {
         <?php 
     }
 
+    /**
+     * Returns the setting field array with metadata of the Setting API field.
+     *
+     * @since   1.0.0    
+     * @param   string  $key    The name of the field to retrieve.    
+     * @return  array  The field details if found, otherwise an empty array.
+     */
     public function get_field(string $key) {
-        return $this->fields[$key];
+        if (isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+        return array();
     }
 
+    /**
+     * Returns the setting section array with metadata of the Setting API section.
+     *
+     * @since   1.0.0    
+     * @param   string  $key    The name of the section to retrieve.    
+     * @return  array  The section details if found, otherwise an empty array.
+     */
     public function get_section(string $key) {
-        //$sectionName = $this->get_section_name($key);
-        return $this->sections[$key];
+        if (isset($this->sections[$key])) {
+            return $this->sections[$key];
+        }
+        return array();
     }
 
     /**
@@ -361,8 +382,6 @@ class Settings {
      * @param   array   $sectionRenderCallback  The callback function for rendering the section.
      * @param   string  $pageName       The name of the page to add the section to. Defaults to the name of the menu slug.
      */
-
-
     public function add_section(
         string $key,
         string $sectionLabel, 
@@ -383,6 +402,13 @@ class Settings {
         return $sectionName;
     }
 
+    /**
+     * Renders a section.
+     * 
+     * @since   1.0.0
+     *  
+     *  @param   array   $arguments  The arguments passed to the callback function.
+     */
     public function default_render_section(array $arguments): void {
         $sectionId = $arguments['id'];
         $sectionDetails = $this->sections[$sectionId];

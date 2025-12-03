@@ -406,28 +406,27 @@ class Snippet {
     }
 
     #region Settings API Callbacks
+    /**
+     * Called by options.php to sanitize and validate settings before saving them to the database.
+     * Currently validation is not implemented as all fields are treated as text at the moment
+     *  
+     * @since   1.0.0
+     * @param   array|null  $settings  An array of settings to sanitize and validate.
+     * @return  array   An array of sanitized and validated settings.
+     */ 
     public function sanitize_and_validate_settings(array | null $settings) : array {
         error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
         //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
         $input = $settings ?? array();
-        $output = array();
+        $sanitizedOutput = array();
 
         foreach ($input as $key => $value) {
             $sanitizedOutput = sanitize_text_field($value);
-            $output[$key] = $this->validate_setting($key,$sanitizedOutput); //TODO Should we do validation on the front end to provide a better user expereience?
+            //TODO Add validation based oin the field type. Do we also need to do this on the front end to provide a better user expereience?
         }
-        return $output;
+        return $sanitizedOutput;
     }
 
-    public function validate_setting(string $key, string $value): string {
-        error_log('Validate Setting: ' . $value); //TODO Remove Debug statements
-        //check if text input is valid otherwise return the current option value
-        if (is_numeric($value)) {
-            add_settings_error($key, $this->pluginSlug . '-message', 'Setting should not be a number. Please enter a valid value.', 'error');
-            return $this->getSetting($key);
-        }
-        return $value;
-    }
 
     /**
      * Callback for displaying the text input field.
@@ -510,14 +509,14 @@ class Snippet {
         wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
     }
 
+    /**
+     * Callback for adding Javascript with additional settings for the Send2CRM Service.
+     * 
+     * @since   1.0.0
+     */
     public function applyAdditionalSettings() {
         error_log('Apply Additional Settings');
-        $debugEnabled = $this->settings->getSetting('debug_enabled');
 
-/*         if (empty($debugEnabled)) {
-            error_log('No Additional Settings found, skipping.');
-            return;
-        } */
         $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
         $settingJsId = "{$this->settings->pluginSlug}-settings";
         if (wp_register_script( $settingJsId, $settingJsUrl, array(), $this->version, false ) === false)
