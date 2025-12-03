@@ -131,12 +131,18 @@ class Settings {
 
         foreach ($this->fields as $fieldName => $fieldDetails) {
             error_log('Add Setting Field: ' . $fieldName . ' - ' . serialize($fieldDetails)); //TODO Remove Debug statements
+            
+            $callbackArgs = array(
+                'id' => $fieldName,
+                'label_for' => $fieldName,
+            );
             add_settings_field(
                 $fieldName,
                 $fieldDetails['label'],
                 $fieldDetails['callback'],
                 $fieldDetails['page'],
-                $fieldDetails['section']
+                $fieldDetails['section'],
+                $callbackArgs
             );
         }
     }
