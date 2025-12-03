@@ -87,7 +87,7 @@ class Snippet {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
-        $hash = $this->getHash($jsLocation);
+        $hash = $this->getHash($jsLocation); //TODO change this to get hash from setting - save version number, hash and 'use cdn' as settings
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
         $snippetId = "{$this->settings->pluginSlug}-snippet";
         

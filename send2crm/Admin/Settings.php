@@ -315,9 +315,12 @@ class Settings {
      * @since   1.0.0
      * @param   string  $key    The name of the setting to retrieve.
      */
-    public function getSetting(string $key): mixed {
+    public function getSetting(string $key, string $default = ''): mixed {
         error_log('Get Setting: ' . $key); //TODO Remove debug Statements
-        $value = get_option($key);
+        $value = get_option($key) ?? $default;
+        if (empty($value)) {
+            $value = $default;
+        }
         error_log('Value returned: ' . $value);
         return $value;
     }

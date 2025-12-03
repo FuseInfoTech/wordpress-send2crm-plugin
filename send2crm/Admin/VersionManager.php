@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) exit;
 define('VERSION_MANAGER_FILENAME', 'js/version-manager.js');
 define('GITHUB_USERNAME', 'FuseInfoTech');
 define('GITHUB_REPO', 'send2crmjs');
-define('MINIMUM_VERSION', '1.0.0');
+define('MINIMUM_VERSION', '1.21.0');
 define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
@@ -210,7 +210,6 @@ public function __construct(Settings $settings, string $version) {
         // Files to download
         $files_to_download = array(
             SEND2CRM_JS_FILENAME,
-            SEND2CRM_HASH_FILENAME
         );
         
         // Create a downloads directory in wp-content/uploads
@@ -283,8 +282,6 @@ public function __construct(Settings $settings, string $version) {
                 continue;
             }
 
-            
-            
             $results[$filename] = array(
                 'success' => true,
                 'message' => 'Downloaded successfully',
@@ -293,11 +290,7 @@ public function __construct(Settings $settings, string $version) {
                 'file_size' => size_format(filesize($file_path))
             );
         }
-        
-        //TODO This should be moved to the javascript to that the updates can be applied using 'Save Changes'
-        //$this->settings->updateSetting('send2crm_js_location', $upload_dir['baseurl']. UPLOAD_FOLDERNAME . $tag_name . '/'. SEND2CRM_JS_FILENAME);
 
-        //$this->settings->updateSetting('send2crm_js_version', $tag_name);
         return array(
             'success' => $all_success, 
             'message' => $all_success ? 'All files downloaded successfully' : 'Some files failed to download',
