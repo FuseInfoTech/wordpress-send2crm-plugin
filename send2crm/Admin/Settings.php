@@ -145,6 +145,22 @@ class Settings {
             $this->get_page_name('version_manager'),
             $this->get_section_name('version_manager') 
         );
+
+        add_settings_field(
+            'send2crm_js_hash',
+            'Send2CRM JS Hash',
+            array($this,'send2crm_js_hash_callback'),
+            $this->get_page_name('version_manager'),
+            $this->get_section_name('version_manager')  
+        );
+
+        add_settings_field(
+            'send2crm_use_cdn',
+            'Use CDN?',
+            array($this,'send2crm_use_cdn_callback'),
+            $this->get_page_name('version_manager'),
+            $this->get_section_name('version_manager')
+        );
     }
 
     private function get_page_name(string $key) {
@@ -307,6 +323,25 @@ class Settings {
         // Output the input field 
         echo "<input class='regular-text' type='text' id='send2crm_js_version' name='send2crm_js_version' value='$value'>"; //TODO Change this back to read only
         echo "<p class='description'>The selected version of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.";
+    }
+
+    public function send2crm_js_hash_callback() {
+        error_log('Send2CRM JS Hash');
+
+        // Get the current saved value 
+        $value = get_option('send2crm_js_hash');
+        // Output the input field 
+        echo "<input class='regular-text' type='text' id='send2crm_js_hash' name='send2crm_js_hash' value='$value'>"; //TODO Change this back to read only
+        echo "<p class='description'>The hash of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.";
+    }
+
+    public function send2crm_use_cdn_callback() {
+        error_log('Send2CRM Use CDN');
+        // Get the current saved value 
+        $value = get_option('send2crm_use_cdn');
+        // Output the input field 
+        echo "<input class='regular-text' type='text' id='send2crm_use_cdn' name='send2crm_use_cdn' value='$value'>"; //TODO Change this back to read only
+        echo "<p class='description'>Sets whether we fetch the Send2CRM JavaScript file from a CDN or fetch a local copy and use that.</p>  Click Fetch Releases and select a version to update this field.";
     }
 
     /**
