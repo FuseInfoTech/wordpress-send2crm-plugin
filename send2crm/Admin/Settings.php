@@ -369,16 +369,18 @@ class Settings {
         string $description = '', 
         string $pageName = 'default_tab',
         array | null  $sectionRenderCallback = null, 
-    ): void {
+    ): string {
         if (is_null($sectionRenderCallback)) {
             $sectionRenderCallback = array($this, 'default_render_section');
         }
-        $this->sections[$this->get_section_name($key)] = array( 
+        $sectionName = $this->get_section_name($key);
+        $this->sections[$sectionName] = array( 
             'label' => $sectionLabel,
             'callback' => $sectionRenderCallback,
             'description' => $description,
             'page' => $pageName,
         );
+        return $sectionName;
     }
 
     public function default_render_section(array $arguments): void {
@@ -403,7 +405,7 @@ class Settings {
      * @param   string  $tabName        The name of the tab to add the group to. Defaults to the name of the menu slug.
      * @param   string  $tab_title      The title of the tab to add the group to. Defaults to 'Plugin Settings'.
      */
-    public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): void {
+    public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): string {
         $groupName = $this->get_option_group_name($key);
         $this->groups[$groupName] = array(
             'option_name' => $this->get_option_name($key),
@@ -411,6 +413,7 @@ class Settings {
             'tab_name' => $tabName,
             'tab_title' => $tab_title
         );
+        return $groupName;
     }
 
 

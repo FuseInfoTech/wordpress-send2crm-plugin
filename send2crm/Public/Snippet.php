@@ -49,7 +49,7 @@ class Snippet {
 
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
-        
+
         $this->settings->add_section(
             'settings', 
             'Required Settings', 
@@ -373,11 +373,35 @@ class Snippet {
             'sync_origins',
             'Sync Origins',
             array($this, 'render_text_input'),
-            'An array of strings indicating the field names of the IP lookup response to store.',
+            'Enables cross-domain sync for all included origins. A list of urls that begin with “https://”',
             'advanced',
             $customizeTabName,
             $customizeGroupName
         );
+
+        //formServicePath
+        $this->settings->add_field(
+            'form_path',
+            'Form Service Path',
+            array($this, 'render_text_input'),
+            'The relative path of the form submition endpoint for the Send2CRM API.',
+            'advanced',
+            $customizeTabName,
+            $customizeGroupName
+        );
+
+        //visitorServicePath
+        $this->settings->add_field(
+            'visitor_path',
+            'Visitor Service Path',
+            array($this, 'render_text_input'),
+            'The relative path of the visitor data update endpoint for the Send2CRM API.',
+            'advanced',
+            $customizeTabName,
+            $customizeGroupName
+        );
+
+
         
     }
 
@@ -503,7 +527,6 @@ class Snippet {
         }
 
         $settingsArray = array();
-
         $this->addSettingIfNotEmpty($settingsArray,'debug','debug_enabled',FILTER_VALIDATE_BOOLEAN);
         $this->addSettingIfNotEmpty($settingsArray,'logPrefix','log_prefix');
         $this->addSettingIfNotEmpty($settingsArray,'personalizationCookie','personalization_cookie');
@@ -528,10 +551,16 @@ class Snippet {
         $this->addSettingIfNotEmpty($settingsArray,'ipFields','ip_fields');
         $this->addSettingIfNotEmpty($settingsArray,'syncOrigins','sync_origins');
 
+        $servicePathsArray = array();
+        $this->addSettingIfNotEmpty($servicePathsArray,'formPath','form_path');
+        $this->addSettingIfNotEmpty($servicePathsArray,'visitorPath','visitor_path');
+
         wp_enqueue_script($settingJsId, $settingJsUrl, array(), $this->version, false);
         error_log('Additional Settings Javascript enqueued at' . $settingJsUrl);
         $settingsJson = json_encode($settingsArray);
-        wp_add_inline_script( $settingJsId, "const additionalSettings = {$settingsJson};", 'before');
+        $servicePathsJson = json_encode($servicePathsArray);
+        $passArraysToJs = "const servicePaths = {$servicePathsJson};const additionalSettings = {$settingsJson};";
+        wp_add_inline_script( $settingJsId, $passArraysToJs, 'before');
     }
 
     private function addSettingIfNotEmpty(array &$settings, string $key, string $fieldId,  $filter = null) {
