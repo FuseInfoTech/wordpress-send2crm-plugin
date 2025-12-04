@@ -103,6 +103,7 @@ class Send2CRM {
         $this->menuName = SEND2CRM_MENU_NAME;
         //Register settings,but the hook initialization should only run on Admin area only.
         $this->settings = new Settings($this->slug, $this->menuName);
+        $this->snippet = new Snippet($this->settings, $this->version);
 
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
@@ -112,7 +113,7 @@ class Send2CRM {
         {
             $this->settings->initializeHooks($isAdmin);
         } else {
-            $this->snippet = new Snippet($this->settings, $this->version);
+
             $this->snippet->initializeHooks($isAdmin);
         }
 
