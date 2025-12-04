@@ -114,18 +114,7 @@ class Snippet {
         wp_localize_script( $snippetId, 'snippetData', $snippetData); 
     }
 
-    /**
-     * Get the hash of the Send2CRM JS file at the provided location.
-     * This hash should be provided with each release of Send2CRM and is
-     * used for performing Subresource Integrity checks.
-     * 
-     * @since 1.0.0
-     */
-    public function getHash(string $location): string {
-        error_log('Get hash from '. dirname($location)  . SEND2CRM_HASH_FILENAME);
-        $hash = file_get_contents(dirname($location)  . SEND2CRM_HASH_FILENAME);
-        return $hash;
-    }
+
 
     
 }

@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) exit;
 define('VERSION_MANAGER_FILENAME', 'js/version-manager.js'); //TODO move this to a constant either in the namespace or in the class.
 define('GITHUB_USERNAME', 'FuseInfoTech');
 define('GITHUB_REPO', 'send2crmjs');
-define('MINIMUM_VERSION', '1.21.0');
+define('MINIMUM_VERSION', '1.20.0');
 define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
@@ -74,7 +74,38 @@ public function __construct(Settings $settings, string $version) {
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
             add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
+            add_action('update_option_send2crm_js_version', array($this, 'update_send2crm_version'));
         }
+    }
+
+    public function update_send2crm_version($newVersion) {
+        error_log('Updating Send2CRM Version'); //TODO Remove Debug statements
+        $currentVersion = $this->settings->getSetting('send2crm_js_version');
+        $useCDN = $this->settings->getSetting('send2crm_use_cdn') ?? false;
+        if ($currentVersion !== $newVersion) {
+            error_log("Updating Send2CRM Version from {$currentVersion} to {$newVersion}");
+/*             if ($useCDN) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
+                $this->download_release_files($newVersion);
+            } */
+            $newHash = $this->getHash(SEND2CRM_CDN . "@{$newVersion}/");
+            $this->settings->updateSetting('send2crm_js_hash', $newHash); //TODO Check the hash is valid before saving?
+            $this->settings->updateSetting('send2crm_js_version', $newVersion);
+
+
+        }
+    }
+
+    /**
+     * Get the hash of the Send2CRM JS file at the provided location.
+     * This hash should be provided with each release of Send2CRM and is
+     * used for performing Subresource Integrity checks.
+     * 
+     * @since 1.0.0
+     */
+    public function getHash(string $location): string {
+        error_log('Get hash from '. $location . SEND2CRM_HASH_FILENAME); //TODO Add checks for bad paths to prevent critical erros
+        $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
+        return $hash;
     }
 
     public function insertVersionManagerJs() {
