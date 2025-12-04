@@ -93,7 +93,8 @@ class Settings {
         register_setting($this->get_option_group_name('required'), 'send2crm_api_domain'); 
         register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_location');
         register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_version');
-
+        register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_hash');
+        register_setting($this->get_option_group_name('version_manager'), 'send2crm_use_cdn');
 
         // Add the settings section
         add_settings_section(
@@ -364,32 +365,15 @@ class Settings {
         error_log('Update Setting: ' . $key . ' with value: ' . $value); //TODO Remove debug Statements
         //escape the value before updating
         update_option($key, esc_attr($value));
-        
     }
 
     public function renderVersionManagerSection(): void {
-        //check if send2crm_js_location setting starts with CDN_PREFIX
-        $jsLocation = $this->getSetting('send2crm_js_location');
-        $usingCDN = strpos($jsLocation, CDN_PREFIX) === 0;
         error_log('Render Version Manager Section');
         ?>
-        <div class="wrap">
-            <h1>Send2CRM Version Manager</h1>
-            <div class="wp-block-group">
-                <div class="wp-block-group__column wp-block-group__column-1-3">
-                    <p>Control which version of the Send2CRM JavaScript file to use and how it is loaded.</p>
-                </div>
-                <div class="wp-block-group__column wp-block-group__column-1-3">
-                    <input type="checkbox" class="" id="use_cdn" name="use_cdn" value="true" <?php echo $usingCDN ? 'checked' : ''; ?>>Use Content Delivery Network (CDN)?</input>
-                </div>
-                <div class="wp-block-group__column wp-block-group__column-1-3">
-                    <button id="fetch-releases" style="margin-top: 20px;" class="button button-primary ">Fetch Releases</button>
-                </div>
-            </div>
+        <div class="wrap">      
+            <button id="fetch-releases" style="margin-top: 20px;" class="button button-primary ">Fetch Releases</button>
             <div id="releases-container" style="margin-top: 15px;"></div>
         </div>
         <?php
     }
-
-
 }

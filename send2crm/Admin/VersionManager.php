@@ -12,14 +12,15 @@ use Send2CRM\Admin\Settings;
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('VERSION_MANAGER_FILENAME', 'js/version-manager.js');
+define('VERSION_MANAGER_FILENAME', 'js/version-manager.js'); //TODO move this to a constant either in the namespace or in the class.
 define('GITHUB_USERNAME', 'FuseInfoTech');
 define('GITHUB_REPO', 'send2crmjs');
 define('MINIMUM_VERSION', '1.21.0');
 define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
-define('CDN_PREFIX', 'https://cdn.jsdelivr.net/gh/'); //TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
+define('CDN_URL', 'https://cdn.jsdelivr.net'); //TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
+define('SEND2CRM_CDN', CDN_URL .'/gh/'. GITHUB_USERNAME . '/' . GITHUB_REPO);
 #endregion
 
 /**
@@ -82,11 +83,11 @@ public function __construct(Settings $settings, string $version) {
         $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . VERSION_MANAGER_FILENAME;
         $versionManagerJSId = "{$this->settings->pluginSlug}-version-manager-js";
     
-/*         if (wp_register_script( $versionManagerJSId, $versionManagerJSUrl, array('jquery'), $this->version, false ) === false)
+        if (wp_register_script( $versionManagerJSId, $versionManagerJSUrl, array('jquery'), $this->version, false ) === false) 
         {
             error_log('Snippet could not be registered - Send2CRM will not be activated.');
             return;
-        } */
+        }
         
         wp_enqueue_script(
             $versionManagerJSId,
@@ -100,8 +101,6 @@ public function __construct(Settings $settings, string $version) {
         wp_localize_script($versionManagerJSId, 'send2crmReleases', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('send2crm_releases_nonce'),
-            'cdn_prefix' => CDN_PREFIX . $this->githubUsername . '/' . $this->githubRepo,
-            'local_prefix' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME
         ));
 
 

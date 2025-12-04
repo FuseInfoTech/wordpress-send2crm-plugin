@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace Send2CRM\Public;
 
 use Send2CRM\Admin\Settings;
-
+use Send2CRM\Admin\VersionManager;
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('SNIPPET_FILENAME', 'js/sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
+define('JS_FOLDERNAME', 'js/');
+define('SNIPPET_FILENAME', JS_FOLDERNAME . 'sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
+define('GITHUB_USERNAME', 'FuseInfoTech');
+define('GITHUB_REPO', 'send2crmjs');
+define('CDN_URL', 'https://cdn.jsdelivr.net');
+define('SEND2CRM_CDN', CDN_URL .'/gh/'. GITHUB_USERNAME . '/' . GITHUB_REPO);
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -73,21 +78,22 @@ class Snippet {
      */
     public function insertSnippet() {
         error_log('Inserting Send2CRM Snippet');
-        $jsLocation = $this->settings->getSetting('send2crm_js_location');
+
         $apiKey = $this->settings->getSetting('send2crm_api_key');
         $apiDomain = $this->settings->getSetting('send2crm_api_domain');
         $jsVersion = $this->settings->getSetting('send2crm_js_version');
+        $jsHash = $this->settings->getSetting('send2crm_js_hash');
+        $useCDN = $this->settings->getSetting('send2crm_use_cdn') ?? false;
 
+        $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . "/{$jsVersion}/";
 
-        if (empty($jsLocation) 
-            || empty($apiKey) 
+        if (empty($apiKey) 
             || empty($apiDomain)
             || empty($jsVersion)) 
         {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
-        $hash = $this->getHash($jsLocation); //TODO change this to get hash from setting - save version number, hash and 'use cdn' as settings
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
         $snippetId = "{$this->settings->pluginSlug}-snippet";
         
@@ -100,8 +106,8 @@ class Snippet {
         $snippetData = array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
-            'js_location' => $jsLocation . "?ver={$jsVersion}",
-            'hash' => $hash
+            'js_location' => $jsPath . SEND2CRM_JS_FILENAME . "?ver={$jsVersion}",
+            'hash' => $jsHash
         );
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         error_log('Snippet enqueued at' . $snippetUrl);
@@ -116,8 +122,8 @@ class Snippet {
      * @since 1.0.0
      */
     public function getHash(string $location): string {
-        error_log('Get hash from '. dirname($location) . '/' . SEND2CRM_HASH_FILENAME);
-        $hash = file_get_contents(dirname($location) . '/' . SEND2CRM_HASH_FILENAME);
+        error_log('Get hash from '. dirname($location)  . SEND2CRM_HASH_FILENAME);
+        $hash = file_get_contents(dirname($location)  . SEND2CRM_HASH_FILENAME);
         return $hash;
     }
 

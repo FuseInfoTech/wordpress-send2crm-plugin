@@ -1,7 +1,7 @@
 jQuery(document).ready(function($) {
     let jsLocationInput = $('#send2crm_js_location');
     let jsVersionInput = $('#send2crm_js_version');
-    let useCDNCheckbox = $('#use_cdn');
+    let useCDNCheckbox = $('#send2crm_use_cdn');
 
     $('#fetch-releases').on('click', function() {
         var fetchButton = $(this);
@@ -31,31 +31,11 @@ jQuery(document).ready(function($) {
                 );
             },
             complete: function() {
-                fetchButton.prop('disabled', false).text('Fetch Releases');
+                fetchButton.prop('disabled', false).text('Refresh Releases');
             }
         });
     });
-
-    $('#use_cdn').on('change', function() {
-        if ($(this).is(':checked')) {
-            updateReleaseSettings("",send2crmReleases.cdn_prefix + "@" + jsVersionInput.val() + "/"); ;
-        } 
-        else {
-            //get the current page url prefix
-            updateReleaseSettings("", send2crmReleases.local_prefix + jsVersionInput.val() + "/");
-        }
-    });
-
-    function updateReleaseSettings(version, location) {
-        if (version) {
-            jsVersionInput.val(version);
-        }
-        if (location) {
-            jsLocationInput.val(location);
-        }
-    }
-
-    
+  
     function displayReleases(releases) {
         var html = '<h2>Available Releases</h2>';
         var versionElement = $('#send2crm_js_version');
