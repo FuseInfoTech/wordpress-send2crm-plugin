@@ -91,7 +91,6 @@ class Settings {
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
         register_setting($this->get_option_group_name('required'), 'send2crm_api_key'); //TODO Sanitize and Validate settings by adding validation callback (3rd parameter)
         register_setting($this->get_option_group_name('required'), 'send2crm_api_domain'); 
-        register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_location');
         register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_version');
         register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_hash');
         register_setting($this->get_option_group_name('version_manager'), 'send2crm_use_cdn');
@@ -127,15 +126,6 @@ class Settings {
             array($this,'send2crm_api_domain_callback'),
             $this->get_page_name('required'),
             $this->get_section_name('required')
-        );
-
-        // Add the js location settings field
-        add_settings_field(
-            'send2crm_js_location',
-            'Send2CRM JS Location',
-            array($this,'send2crm_js_location_callback'),
-            $this->get_page_name('version_manager'),
-            $this->get_section_name('version_manager') 
         );
 
         // Add the js version settings field
@@ -298,23 +288,6 @@ class Settings {
         // Output the input field 
         echo "<input type='text' name='send2crm_api_domain' value='$value' required>";
         echo "<p class='description'>Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.</p>";
-    }
-
-    /**
-     * Callback for displaying the JavaScript location setting.
-     * 
-     * @since   1.0.0
-     */
-    public function send2crm_js_location_callback() {
-        error_log('Send2CRM JS Location');
-        // Get the current saved value 
-        $value = get_option('send2crm_js_location');
-        if (empty($value)) { //TODO Remove default value
-            $value = "https://cdn.jsdelivr.net/gh/FuseInfoTech/send2crmjs/send2crm.min.js";
-        }
-        // Output the input field 
-        echo "<input class='large-text' type='text' id='send2crm_js_location' name='send2crm_js_location' value='$value'>";//TODO Change this back to read only do we need to allow for editing this.
-        echo "<p class='description'>The location of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.</i>";
     }
 
     public function send2crm_js_version_callback() {
