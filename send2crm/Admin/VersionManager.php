@@ -100,7 +100,7 @@ public function __construct(Settings $settings, string $version) {
         );
 
         $this->settings->add_field(
-            'send2crmjs_use_cdn',
+            'use_cdn',
             'Use CDN?', 
             array($this, 'render_cdn_input'), 
             "If checked, public facing pages will use JsDeliver CDN for Send2CRM.js. Otherwise, fetch a local copy of Send2CRM.js and referece that. Select a version to update this field.", 
@@ -181,7 +181,8 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        $checked = checked($value, 1, false);
+        echo "<input type='checkbox' id='$fieldId' name='$settingName' value='1' $checked>";
         if (empty($description)) {
             return;
         }
