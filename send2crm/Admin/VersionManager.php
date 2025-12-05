@@ -58,6 +58,56 @@ public function __construct(Settings $settings, string $version) {
         $this->githubRepo = GITHUB_REPO;
         $this->githubUsername = GITHUB_USERNAME;
         $this->minimum_version = MINIMUM_VERSION;
+
+        $this->initialize_settings();
+    }
+
+    public function initialize_settings() {
+        $versionGroup = 'version_manager';
+        $versionTabName = 'version_tab';
+        $versionGroupName = $this->settings->add_group(
+            $versionGroup, 
+            array($this,'sanitize_and_validate_version_settings'), 
+            $versionTabName, 
+            'Send2CRM.js'
+        );
+               //Create section for cookies settings
+        $versionSectionName = $this->settings->add_section( //TODO add custom callback for version section
+            'version', 
+            'Version Configuration', 
+            'Select the version of Send2CRM.js and whether it kept locally or fetched directly from the CDN on public facing pages.', 
+            $versionTabName
+        );
+
+        $this->settings->add_field(
+            'js_version',
+            'Version', 
+            array($this, 'render_version_input'), 
+            "Store Visitor Segment values into a 'send2crm' cookie for website back end access.", 
+            $versionSectionName, 
+            $versionTabName, 
+            $versionGroupName
+        );
+
+        $this->settings->add_field(
+            'js_hash',
+            'Hash', 
+            array($this, 'render_hash_input'), 
+            "The hash of the Send2CRM JavaScript file. Select a version to update this field.", 
+            $versionSectionName, 
+            $versionTabName, 
+            $versionGroupName
+        );
+
+        $this->settings->add_field(
+            'send2crmjs_use_cdn',
+            'Use CDN?', 
+            array($this, 'render_cdn_input'), 
+            "If checked, public facing pages will use JsDeliver CDN for Send2CRM.js. Otherwise, fetch a local copy of Send2CRM.js and referece that. Select a version to update this field.", 
+            $versionSectionName, 
+            $versionTabName, 
+            $versionGroupName
+        );
     }
 
     /**
@@ -78,6 +128,93 @@ public function __construct(Settings $settings, string $version) {
         }
     }
 
+    #region Callbacks
+    public function renderVersionManagerSection(): void {
+        error_log('Render Version Manager Section');
+        ?>
+        <div class="wrap">      
+            <button id="fetch-releases" style="margin-top: 20px;" class="button button-primary ">Fetch Releases</button>
+            <div id="releases-container" style="margin-top: 15px;"></div>
+        </div>
+        <?php
+    }
+    public function render_version_input(array $arguments) : void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>$description</p>";
+    }
+
+    public function render_hash_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        error_log($fieldId);
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        echo "<input readonly type='text' id='$fieldId' name='$settingName' value='$value'>";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>$description</p>";
+    }
+
+    public function render_cdn_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        error_log($fieldId);
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>$description</p>";
+    }
+
+    /**
+     * Callback for displaying the text input field.
+     * 
+     * @since   1.0.0
+     * @param   string  $fieldId        The ID of the field.
+     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
+     */
+    public function render_text_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        echo "<input class='regular-text' type='text' id='$fieldId' name='$settingName' value='$value'>";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>$description</p>";
+    }
+
+    public function sanitize_and_validate_version_settings($input) {
+        return $input; //TODO add validation and sanitization
+    }
+
     public function update_send2crm_version($newVersion) {
         error_log('Updating Send2CRM Version'); //TODO Remove Debug statements
         $currentVersion = $this->settings->getSetting('send2crm_js_version');
@@ -95,6 +232,8 @@ public function __construct(Settings $settings, string $version) {
         }
     }
 
+
+
     /**
      * Get the hash of the Send2CRM JS file at the provided location.
      * This hash should be provided with each release of Send2CRM and is
@@ -102,12 +241,6 @@ public function __construct(Settings $settings, string $version) {
      * 
      * @since 1.0.0
      */
-    public function getHash(string $location): string {
-        error_log('Get hash from '. $location . SEND2CRM_HASH_FILENAME); //TODO Add checks for bad paths to prevent critical erros
-        $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
-        return $hash;
-    }
-
     public function insertVersionManagerJs() {
         error_log('Inserting Version Manager JS'); //TODO Remove Debug statements
         
@@ -133,8 +266,14 @@ public function __construct(Settings $settings, string $version) {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('send2crm_releases_nonce'),
         ));
+    }
 
+    #endregion
 
+    public function getHash(string $location): string {
+        error_log('Get hash from '. $location . SEND2CRM_HASH_FILENAME); //TODO Add checks for bad paths to prevent critical erros
+        $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
+        return $hash;
     }
 
      /**

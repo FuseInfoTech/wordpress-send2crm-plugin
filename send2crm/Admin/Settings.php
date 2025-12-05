@@ -6,6 +6,9 @@ namespace Send2CRM\Admin;
 
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
+#region Constants
+DEFINE('DEFAULT_GROUPING_NAME', 'settings');
+#endregion
 
 /**
  * Send2CRM Class that contains and manages plugnin settings and 
@@ -34,8 +37,6 @@ class Settings {
      */
     private string $menuSlug;
 
-
-
     /**
      * The Name to use for the Settings Page, Menu, Title
      *
@@ -43,19 +44,44 @@ class Settings {
      */
     private string $menuName;
 
+    /**
+     * The array of settings fields used for generating Setting API fields for the Settings page.
+     * 
+     * @since    1.0.0
+     */
+    private array $fields;
+
+    /**
+     * The array of settings sections used for generating Setting API sections for the Settings page.
+     *   
+     * @since    1.0.0
+     */
+    private array $sections;
+
+    /**
+     * The array of option groups used for generating Setting API groups for the Settings page.
+     *   
+     * @since    1.0.0
+     */
+    private array $groups;
 
     /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
      * @param    $pluginSlug       The name of this plugin.
+     * @param    $menuName         The name to use for the Settings Page, Menu, Title
      */
     public function __construct(string $pluginSlug, string $menuName)
     {
         error_log('Init Send2CRM Settings'); //TODO Remove Debug statements
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
+        //TODO Check if we still need $menuName
         $this->menuName = $menuName;
+        $this->fields = array();
+        $this->sections = array();
+        $this->groups = array();
     }
 
     /**
@@ -77,7 +103,7 @@ class Settings {
     }
 
 
-    
+    #region Callbacks
     /**
      * Add the Sections, Fields and register settings for the plugin.
      *
@@ -86,88 +112,47 @@ class Settings {
      */
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
- 
         // Register the setting
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
-        register_setting($this->get_option_group_name('required'), 'send2crm_api_key'); //TODO Sanitize and Validate settings by adding validation callback (3rd parameter)
-        register_setting($this->get_option_group_name('required'), 'send2crm_api_domain'); 
-        register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_version');
-        register_setting($this->get_option_group_name('version_manager'), 'send2crm_js_hash');
-        register_setting($this->get_option_group_name('version_manager'), 'send2crm_use_cdn');
+        foreach ($this->groups as $groupName => $groupDetails) {
+            $registerSettingParameters = array(
+                //type and description ignored unless 'show_in_rest' => true so technically you can submit anything to options.php and wordpress will accept it but I've included it for clarity. 
+                'type' => 'array', 
+                'description' => '',
+                'show_in_rest' => false,    
+                'sanitize_callback' => $groupDetails['callback'],
+            );
+            register_setting($groupName, $groupDetails['option_name'], $registerSettingParameters);
+        }   
 
-        // Add the settings section
-        add_settings_section(
-            $this->get_section_name('required'),
-            'Required Settings',
-            array($this,'send2crm_settings_section'),
-            $this->get_page_name('required')
-        );
 
-        add_settings_section( 
-            $this->get_section_name('version_manager'), 
-            'Send2CRM Versions',
-            array($this, 'renderVersionManagerSection'), 
-            $this->get_page_name('version_manager')
-        );
 
-        // Add the api key setting field
-        add_settings_field(
-            'send2crm_api_key',
-            'Send2CRM API Key',
-            array($this,'send2crm_api_key_callback'),
-            $this->get_page_name('required'),
-            $this->get_section_name('required')
-        );
+        foreach ($this->sections as $sectionName => $sectionDetails) {
+            error_log('Add Setting Section: ' . $sectionName . ' - ' . $sectionDetails['label']); //TODO Remove Debug statements
+            add_settings_section(
+                $sectionName,
+                $sectionDetails['label'],
+                $sectionDetails['callback'],
+                $sectionDetails['page'],
+            );
+        }
 
-        // Add the api domain settings field
-        add_settings_field(
-            'send2crm_api_domain',
-            'Send2CRM API Domain',
-            array($this,'send2crm_api_domain_callback'),
-            $this->get_page_name('required'),
-            $this->get_section_name('required')
-        );
-
-        // Add the js version settings field
-        add_settings_field(
-            'send2crm_js_version',
-            'Send2CRM JS Version',
-            array($this,'send2crm_js_version_callback'),
-            $this->get_page_name('version_manager'),
-            $this->get_section_name('version_manager') 
-        );
-
-        add_settings_field(
-            'send2crm_js_hash',
-            'Send2CRM JS Hash',
-            array($this,'send2crm_js_hash_callback'),
-            $this->get_page_name('version_manager'),
-            $this->get_section_name('version_manager')  
-        );
-
-        add_settings_field(
-            'send2crm_use_cdn',
-            'Use CDN?',
-            array($this,'send2crm_use_cdn_callback'),
-            $this->get_page_name('version_manager'),
-            $this->get_section_name('version_manager')
-        );
-    }
-
-    private function get_page_name(string $key) {
-        return "{$this->pluginSlug}-{$key}-page";
-    }
-
-    private function get_option_group_name(string $key) {
-        return "{$this->pluginSlug}-{$key}-option-group";
-    }
-
-    private function get_section_name(string $key) {
-        return "{$this->pluginSlug}-{$key}-section";
-    }
-
-    private function get_option_name(string $key) {
-        return "{$this->pluginSlug}-{$key}-option";
+        foreach ($this->fields as $fieldName => $fieldDetails) {
+            error_log('Add Setting Field: ' . $fieldName . ' - ' . serialize($fieldDetails)); //TODO Remove Debug statements
+            
+            $callbackArgs = array(
+                'id' => $fieldName,
+                'label_for' => $fieldName,
+            );
+            add_settings_field(
+                $fieldName,
+                $fieldDetails['label'],
+                $fieldDetails['callback'],
+                $fieldDetails['page'],
+                $fieldDetails['section'],
+                $callbackArgs
+            );
+        }
     }
 
     /**
@@ -180,11 +165,11 @@ class Settings {
         error_log("Adding {$this->menuName} Menu");
         // Add a new menu page 
         add_options_page( "{$this->menuName} Settings", // Page title 
-        $this->menuName, // Menu title 
-        'manage_options', // Capability required 
-        $this->menuSlug, // Menu slug 
-        array($this,'renderSettingsPageContent'), // Callback function 
-        99 // Position 
+            $this->menuName, // Menu title 
+            'manage_options', // Capability required 
+            $this->menuSlug, // Menu slug 
+            array($this,'renderSettingsPageContent'), // Callback function 
+            99 // Position 
         );
     }
 
@@ -207,42 +192,27 @@ class Settings {
         if (isset($_GET['settings-updated']))
         {
             // Add settings saved message with the class of "updated"
-            add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', __('Settings saved.'), 'success');
+            add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', 'Settings saved.', 'success');
         }
-
-        // Show error/update messages
-        //settings_errors($this->pluginSlug);
-
-
         error_log('Displaying Setting Page from Callback'); //TODO Remove Debug statements
         ?>
         <div class="wrap"> 
             <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
             <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'required_settings'; ?>
             <h2 class="nav-tab-wrapper">
-                <a href="?page=<?php echo $this->menuSlug; ?>&tab=required_settings" class="nav-tab <?php echo $activeTab === 'required_settings' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Required Settings', $this->pluginSlug); ?></a>
-                <a href="?page=<?php echo $this->menuSlug; ?>&tab=version_manager" class="nav-tab <?php echo $activeTab === 'version_manager' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e('Version Manager', $this->pluginSlug); ?></a>
+                <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
+                    <a href="?page=<?php echo $this->menuSlug; ?>&tab=<?php echo $groupDetails['tab_name']; ?>" class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>"><?php esc_html_e($groupDetails['tab_title'], $this->pluginSlug); ?></a>
+                <?php } ?> 
             </h2>
             <form method="post" action="options.php"> 
                 <?php
-                    // Output security fields
-
-                    if ($activeTab === 'required_settings') {
-                        settings_fields($this->get_option_group_name('required')); 
-                        //Wrapper to preseve formatting
-                        //echo '<table class="form-table">';
-                        // Output sections and fields 
-                        //do_settings_fields( 'send2crm', 'send2crm_settings_section' );
-                        do_settings_sections( $this->get_page_name('required') );
-                        //echo '</table>';
-                    } else if ($activeTab === 'version_manager') {
-                        settings_fields($this->get_option_group_name('version_manager'));
-                        //echo '<table class="form-table">';
-                        do_settings_sections( $this->get_page_name('version_manager') );
-                        //do_settings_fields( 'send2crm', 'version_manager_section' );
-                        //echo '</table>';
-
-                        //$this->renderVersionManagerSection();
+                    foreach ($this->groups as $groupName => $groupDetails) { 
+                        if ($activeTab === $groupDetails['tab_name']) {
+                            // Output security fields 
+                            settings_fields($groupName); 
+                            // Output sections and fields 
+                            do_settings_sections( $groupDetails['tab_name'] );
+                        }
                     }
                     // Output save button 
                     submit_button(); 
@@ -253,100 +223,251 @@ class Settings {
     }
 
     /**
-     * Callback for displaying the required Settings section.
+     * Renders a section.
      * 
      * @since   1.0.0
+     *  
+     *  @param   array   $arguments  The arguments passed to the callback function.
      */
-    public function send2crm_settings_section(): void {
-        error_log('Send2CRM Settings Section');
-        echo '<p>The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.</p>';
+    public function default_render_section(array $arguments): void {
+        $sectionId = $arguments['id'];
+        $sectionDetails = $this->sections[$sectionId];
+        if (empty($sectionDetails)) {
+            return; 
+        }
+        $description = $sectionDetails['description'];
+        if (empty($description)) {
+            return;
+        }
+        echo "<p>$description</p>";
+    }
+    #endregion
+
+    #region Public Functions
+    /**
+     * Returns the setting field array with metadata of the Setting API field.
+     *
+     * @since   1.0.0    
+     * @param   string  $key    The name of the field to retrieve.    
+     * @return  array  The field details if found, otherwise an empty array.
+     */
+    public function get_field(string $key) {
+        if (isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+        return array();
     }
 
     /**
-     * Callback for displaying the API key setting.
-     * 
-     * @since   1.0.0
+     * Returns the setting section array with metadata of the Setting API section.
+     *
+     * @since   1.0.0    
+     * @param   string  $key    The name of the section to retrieve.    
+     * @return  array  The section details if found, otherwise an empty array.
      */
-    public function send2crm_api_key_callback(): void {
-        error_log('Send2CRM API Key');
-        // Get the current saved value 
-        $value = get_option('send2crm_api_key'); 
-        // Output the input field 
-        echo "<input type='text' name='send2crm_api_key' value='$value' required>";
-        echo "<p class='description'>Enter the shared API key configured for your service in Salesforce.</p>";
+    public function get_section(string $key) {
+        if (isset($this->sections[$key])) {
+            return $this->sections[$key];
+        }
+        return array();
     }
-
-    /**
-     * Callback for displaying the API domain setting.
-     * 
-     * @since   1.0.0
-     */
-    public function send2crm_api_domain_callback() {
-        error_log('Send2CRM API Domain');
-        // Get the current saved value 
-        $value = get_option('send2crm_api_domain');
-        // Output the input field 
-        echo "<input type='text' name='send2crm_api_domain' value='$value' required>";
-        echo "<p class='description'>Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.</p>";
-    }
-
-    public function send2crm_js_version_callback() {
-        error_log('Send2CRM JS Version');
-        // Get the current saved value 
-        $value = get_option('send2crm_js_version');
-        // Output the input field 
-        echo "<input class='regular-text' type='text' id='send2crm_js_version' name='send2crm_js_version' value='$value'>"; //TODO Change this back to read only
-        echo "<p class='description'>The selected version of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.";
-    }
-
-    public function send2crm_js_hash_callback() {
-        error_log('Send2CRM JS Hash');
-
-        // Get the current saved value 
-        $value = get_option('send2crm_js_hash');
-        // Output the input field 
-        echo "<input class='regular-text' type='text' id='send2crm_js_hash' name='send2crm_js_hash' value='$value'>"; //TODO Change this back to read only
-        echo "<p class='description'>The hash of the Send2CRM JavaScript file.</p>  Click Fetch Releases and select a version to update this field.";
-    }
-
-    public function send2crm_use_cdn_callback() {
-        error_log('Send2CRM Use CDN');
-        // Get the current saved value 
-        $value = get_option('send2crm_use_cdn');
-        // Output the input field 
-        echo "<input class='regular-text' type='text' id='send2crm_use_cdn' name='send2crm_use_cdn' value='$value'>"; //TODO Change this back to read only
-        echo "<p class='description'>Sets whether we fetch the Send2CRM JavaScript file from a CDN or fetch a local copy and use that.</p>  Click Fetch Releases and select a version to update this field.";
-    }
+    
 
     /**
      * Retrieves a specific setting from the database.
      *
      * @since   1.0.0
      * @param   string  $key    The name of the setting to retrieve.
+     * @return  string  The value of the setting if found, otherwise an empty string.
      */
-    public function getSetting(string $key, string $default = ''): mixed {
-        error_log('Get Setting: ' . $key); //TODO Remove debug Statements
-        $value = get_option($key) ?? $default;
-        if (empty($value)) {
-            $value = $default;
-        }
-        error_log('Value returned: ' . $value);
+    public function getSetting(string $key, string | null $groupName = null, string $default = ''): string {
+        error_log('Get Setting: ' . $key);
+        if (is_null($groupName)) {
+            $fieldDetails = $this->fields[$key] ?? null;
+            if (is_null($fieldDetails)) {
+                error_log( "Field {$key} not found returning '{$default}'" );
+                return $default;
+            }
+            $groupName = $fieldDetails['option_group'] ?? $this->get_option_group_name('settings');
+        }    
+        $array = get_option($this->groups[$groupName]['option_name'], array()); //TODO fix null values
+        error_log('Value returned: ' . serialize($array));
+        $value = $array[$key] ?? $default;
+        error_log('returning: ' . $value );
         return $value;
     }
 
-    public function updateSetting(string $key, string $value): void {
-        error_log('Update Setting: ' . $key . ' with value: ' . $value); //TODO Remove debug Statements
-        //escape the value before updating
-        update_option($key, esc_attr($value));
+    /**
+     * Retrieves the name of a specific setting from the database.
+     * 
+     * @since   1.0.0
+     * @param   string  $key        The name of the setting to retrieve.
+     * @param   string  $groupName  The name of the option group to retrieve the setting from.
+     * @return  string  The name of the setting, in the form of option_name[key].
+     */
+    public function getSettingName(string $key, string $groupName): string {
+        $settingName = "{$this->groups[$groupName]['option_name']}[{$key}]";
+        error_log('Get Setting Name: ' . $settingName);
+        return $settingName;    
     }
 
-    public function renderVersionManagerSection(): void {
-        error_log('Render Version Manager Section');
-        ?>
-        <div class="wrap">      
-            <button id="fetch-releases" style="margin-top: 20px;" class="button button-primary ">Fetch Releases</button>
-            <div id="releases-container" style="margin-top: 15px;"></div>
-        </div>
-        <?php
+    #endregion
+    #region Private Functions
+
+    /**
+     * Retrieves the section name for a specific setting.  
+     * 
+     * @since   1.0.0
+     * @param   string  $key The name of the setting.
+     * @return  string  The section name for the setting.
+     */
+    private function get_section_name(string $key) : string {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_section";
+        }
+        //If the key is already a section name , don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_section" )  ) {
+            return $key;
+        }
+        return "{$this->pluginSlug}_{$key}_section";
+    }
+
+    /**
+     * Retrieves the page name for a specific setting.
+     * 
+     * @since   1.0.0
+     * @param   string  $key The name of the setting.
+     * @return  string  The page name for the setting.
+     */
+    private function get_page_name(string $key) {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_page";
+        }
+        //If the key is already a page name, don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_page")) {
+            return $key;
+        }
+        return "{$this->pluginSlug}_{$key}_page";
+    }
+
+    /**
+     * Retrieves the option group name for a specific setting.
+     * 
+     * @since   1.0.0
+     * @param   string  $key    The name of the setting.
+     * @return  string  The option group name for the setting.
+     */
+    private function get_option_group_name(string $key) {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_option_group";
+        }
+        //If the key is already an option group name, don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_option_group")) {
+            return $key;
+        }
+        return "{$this->pluginSlug}_{$key}_option_group";
+    }
+
+
+    /**
+     * Retrieves the option name for a specific setting.
+     * 
+     * @since   1.0.0
+     * @param   string  $key    The name of the setting.
+     * @return  string  The option name for the setting.
+     */
+    private function get_option_name(string $key) {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_option";
+        }
+        //If the key is already an option name, don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_option")) {
+            return $key;
+        }
+        return "{$this->pluginSlug}_{$key}_option";
+    }
+
+    //TODO Separate Public and private functions into correct regions
+    /**
+     * Adds a field to the settings page.
+     * 
+     * @since   1.0.0
+     * @param   string  $fieldName      The name of the field.
+     * @param   string  $fieldLabel     The label of the field.
+     * @param   array   $fieldRenderCallback   The callback function for rendering the field.
+     * @param   string  $sectionKey     The name of the section to add the field to.
+     * @param   string  $pageName       The name of the page to add the field to.
+     * @param   string  $groupName      The name of the option group to add the field to.
+     */
+    public function add_field(
+        string $fieldName,
+        string $fieldLabel, 
+        array $fieldRenderCallback,
+        string $description = '', 
+        string $sectionKey = 'settings', 
+        string $pageName = 'default_tab', //TODO Should this really be called pageName or tabName. Is there value in having a page that isn't a tab since the render treates a tab as a page but it is still called a page.
+        string $groupName = 'settings',
+    ): void 
+    {
+        $this->fields[$fieldName] = array(
+            'label' => $fieldLabel,
+            'callback' => $fieldRenderCallback,
+            'page' => $pageName,
+            'section' => $this->get_section_name($sectionKey),
+            'option_group' => $this->get_option_group_name($groupName),
+            'description' => $description
+        );
+        error_log('Field added: ' . serialize($this->fields[$fieldName])); //TODO Remove debug Statements
+    }
+
+    /**
+     * Adds a section to the settings page.
+     * 
+     * @since   1.0.0
+     * @param   string  $key            The name of the section.
+     * @param   string  $sectionLabel   The label of the section.
+     * @param   array   $sectionRenderCallback  The callback function for rendering the section.
+     * @param   string  $pageName       The name of the page to add the section to. Defaults to the name of the menu slug.
+     */
+    public function add_section(
+        string $key,
+        string $sectionLabel, 
+        string $description = '', 
+        string $pageName = 'default_tab',
+        array | null  $sectionRenderCallback = null, 
+    ): string {
+        if (is_null($sectionRenderCallback)) {
+            $sectionRenderCallback = array($this, 'default_render_section');
+        }
+        $sectionName = $this->get_section_name($key);
+        $this->sections[$sectionName] = array( 
+            'label' => $sectionLabel,
+            'callback' => $sectionRenderCallback,
+            'description' => $description,
+            'page' => $pageName,
+        );
+        return $sectionName;
+    }
+
+
+
+    /**
+     * Adds a group to the settings page.
+     *  
+     * @since   1.0.0
+     * @param   string  $key            The name of the group.
+     * @param   array   $sanitizeAndValidateCallback  The callback function for sanitizing and validating the group.
+     * @param   string  $tabName        The name of the tab to add the group to. Defaults to the name of the menu slug.
+     * @param   string  $tab_title      The title of the tab to add the group to. Defaults to 'Plugin Settings'.
+     */
+    public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): string {
+        $groupName = $this->get_option_group_name($key);
+        $this->groups[$groupName] = array(
+            'option_name' => $this->get_option_name($key),
+            'callback' => $sanitizeAndValidateCallback,
+            'tab_name' => $tabName,
+            'tab_title' => $tab_title
+        );
+        return $groupName;
     }
 }
