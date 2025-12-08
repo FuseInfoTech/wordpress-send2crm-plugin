@@ -65,15 +65,9 @@ public function __construct(Settings $settings, string $version) {
     }
 
     public function initialize_settings() {
-        $versionGroup = 'version_manager';
+
         $versionTabName = 'default_tab';
-/*         $versionGroupName = $this->settings->add_group(
-            $versionGroup, 
-            array($this,'sanitize_and_validate_version_settings'), 
-            $versionTabName, 
-            'Send2CRM.js'
-        ); */
-               //Create section for cookies settings
+        //Create section for cookies settings
         $versionSectionName = $this->settings->add_section( //TODO add custom callback for version section
             'version', 
             'Version Configuration', 
@@ -119,7 +113,7 @@ public function __construct(Settings $settings, string $version) {
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
             add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
-            add_action('update_option_send2crm_version_manager_option', array($this, 'update_send2crm_version'));
+            add_action('update_option_send2crm_settings_option', array($this, 'update_send2crm_version'));
         }
     }
 
