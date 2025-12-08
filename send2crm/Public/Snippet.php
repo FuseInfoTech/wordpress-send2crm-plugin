@@ -53,7 +53,7 @@ class Snippet {
         $this->settings = $settings;
         $this->version = $version;
         //Create the required settings as the default settings group, section.
-        $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
+        $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
 
         $this->settings->add_section(
             'settings', 
@@ -61,14 +61,14 @@ class Snippet {
             'The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.'
         );
         $this->settings->add_field(
-            'send2crm_api_key',
+            'api_key',
             'Send2CRM API Key',
             array($this, 'render_text_input'),
             'Enter the shared API key configured for your service in Salesforce.'
         );
 
         $this->settings->add_field(
-            'send2crm_api_domain',
+            'api_domain',
             'Send2CRM API Domain',
             array($this, 'render_text_input'),
             'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.'
@@ -477,12 +477,14 @@ class Snippet {
     public function insertSnippet() {
         error_log('Inserting Send2CRM Snippet');
 
-        $apiKey = $this->settings->getSetting('send2crm_api_key');
-        $apiDomain = $this->settings->getSetting('send2crm_api_domain');
-        $jsVersion = $this->settings->getSetting('send2crm_js_version');
-        $jsHash = $this->settings->getSetting('send2crm_js_hash');
-        $useCDN = $this->settings->getSetting('send2crm_use_cdn') ?? false;
+        $apiKey = $this->settings->getSetting('api_key');
+        $apiDomain = $this->settings->getSetting('api_domain');
+        $jsVersion = $this->settings->getSetting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
+        $jsHash = $this->settings->getSetting('js_hash');
+        $useCDN = $this->settings->getSetting('use_cdn') ?? false;
 
+        $upload_dir = wp_upload_dir();
+        
         $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . "/{$jsVersion}/";
 
         if (empty($apiKey) 

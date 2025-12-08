@@ -66,49 +66,42 @@ public function __construct(Settings $settings, string $version) {
 
     public function initialize_settings() {
         $versionGroup = 'version_manager';
-        $versionTabName = 'version_tab';
-        $versionGroupName = $this->settings->add_group(
+        $versionTabName = 'default_tab';
+/*         $versionGroupName = $this->settings->add_group(
             $versionGroup, 
             array($this,'sanitize_and_validate_version_settings'), 
             $versionTabName, 
             'Send2CRM.js'
-        );
+        ); */
                //Create section for cookies settings
         $versionSectionName = $this->settings->add_section( //TODO add custom callback for version section
             'version', 
             'Version Configuration', 
-            'Select the version of Send2CRM.js and whether it kept locally or fetched directly from the CDN on public facing pages.', 
-            $versionTabName
+            'Select your Send2CRM.js version a local copy or the Content Delivery Network version will be used for your site.'
         );
 
         $this->settings->add_field(
             'js_version',
             'Version', 
             array($this, 'render_version_input'), 
-            "Select which version of Send2CRM.js to use. If use CDN is unchecked, a local copy of the javascript will be fetched from the CDN. Select a version to update this field.", 
-            $versionSectionName, 
-            $versionTabName, 
-            $versionGroupName
+            "Select which version of Send2CRM.js to use. If 'Use CDN?' is not checked, a local copy of the javascript will be fetched from the CDN. Select a version to update this field.", 
+            $versionSectionName
         );
 
         $this->settings->add_field(
             'js_hash',
-            'Hash', 
+            'File Verification Code', 
             array($this, 'render_hash_input'), 
-            "The hash of the Send2CRM JavaScript file. Select a version to update this field.", 
+            "A unique code to confirm the expected Send2CRM.js file loads on your site. Choose a version above to update this field automatically.", 
             $versionSectionName, 
-            $versionTabName, 
-            $versionGroupName
         );
 
         $this->settings->add_field(
             'use_cdn',
             'Use CDN?', 
             array($this, 'render_cdn_input'), 
-            "If checked, public facing pages will use JsDeliver CDN for Send2CRM.js. Otherwise, fetch a local copy of Send2CRM.js and referece that. Select a version to update this field.", 
-            $versionSectionName, 
-            $versionTabName, 
-            $versionGroupName
+            "If checked, public facing pages will use JsDeliver CDN for Send2CRM.js. Otherwise, fetch a local copy of Send2CRM.js and reference that.", 
+            $versionSectionName
         );
     }
 

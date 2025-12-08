@@ -8,6 +8,7 @@ namespace Send2CRM\Admin;
 if (!defined('ABSPATH')) exit;
 #region Constants
 DEFINE('DEFAULT_GROUPING_NAME', 'settings');
+DEFINE('DOCS_URL', 'https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2196471809/JavaScript+client');
 #endregion
 
 /**
@@ -198,6 +199,7 @@ class Settings {
         ?>
         <div class="wrap"> 
             <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
+            <p>Additional Settings should be left empty unless you require changes from the default settings. For more information on Send2CRM configuration please visit <a target="_blank" href=<?php echo DOCS_URL; ?>>Javascript Client Documentation</a>.</p> 
             <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'default_tab'; ?>
             <h2 class="nav-tab-wrapper">
                 <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
