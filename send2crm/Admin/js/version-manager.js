@@ -1,7 +1,7 @@
 
 jQuery(document).ready(function($) {
-    var versionElement = $('#send2crm_js_version');
-
+    var versionElement = $('#js_version');
+    
     $('#fetch-releases').on('click', function() {
         var fetchButton = $(this);
         fetchButton.prop('disabled', true).text('Fetching...');

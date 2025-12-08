@@ -198,7 +198,7 @@ class Settings {
         ?>
         <div class="wrap"> 
             <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
-            <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'required_settings'; ?>
+            <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'default_tab'; ?>
             <h2 class="nav-tab-wrapper">
                 <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
                     <a href="?page=<?php echo $this->menuSlug; ?>&tab=<?php echo $groupDetails['tab_name']; ?>" class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>"><?php esc_html_e($groupDetails['tab_title'], $this->pluginSlug); ?></a>
@@ -295,6 +295,25 @@ class Settings {
         $value = $array[$key] ?? $default;
         error_log('returning: ' . $value );
         return $value;
+    }
+
+        public function update_setting(string $key, string $value, string | null $groupName = null ): void {
+ //TODO Remove debug Statements
+        //escape the value before updating
+        if (is_null($groupName)) {
+            $fieldDetails = $this->fields[$key] ?? null;
+            if (is_null($fieldDetails)) {
+                error_log( "Field {$key} not found." );
+                return;
+            }
+            $groupName = $fieldDetails['option_group'] ?? $this->get_option_group_name('settings');
+        }
+
+        $optionName = $this->groups[$groupName]['option_name'];
+        $array = get_option($optionName, array());
+        $array[$key] = $value;
+        error_log("Update Setting: {$optionName}[{$key}] with value: {$value}");
+        update_option($optionName, $array);
     }
 
     /**

@@ -51,6 +51,8 @@ class VersionManager {
 
     private string $minimum_version;
 
+    private array $releases;
+
 public function __construct(Settings $settings, string $version) {
         error_log('Starting Version Manager'); //TODO Remove Debug statements
         $this->settings = $settings;
@@ -83,7 +85,7 @@ public function __construct(Settings $settings, string $version) {
             'js_version',
             'Version', 
             array($this, 'render_version_input'), 
-            "Store Visitor Segment values into a 'send2crm' cookie for website back end access.", 
+            "Select which version of Send2CRM.js to use. If use CDN is unchecked, a local copy of the javascript will be fetched from the CDN. Select a version to update this field.", 
             $versionSectionName, 
             $versionTabName, 
             $versionGroupName
@@ -124,7 +126,7 @@ public function __construct(Settings $settings, string $version) {
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
             add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
-            add_action('update_option_send2crm_js_version', array($this, 'update_send2crm_version'));
+            add_action('update_option_send2crm_version_manager_option', array($this, 'update_send2crm_version'));
         }
     }
 
@@ -147,7 +149,17 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        //echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        if (empty($releases)) {
+            $this->fetch_releases();
+        }
+        echo "<select id='$fieldId' name='$settingName'>";
+        foreach ($this->releases as $version => $release) {
+           $publishedAt = date('Y-m-d',strtotime($release['published_at']));
+           echo "<option value='$version' ".($value == $version ? 'selected' : '').">$version (Published $publishedAt)</option>";
+        }
+        echo "</select>";
+        echo "<button id='fetch-releases' class='button button-primary'><span style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
         if (empty($description)) {
             return;
         }
@@ -160,11 +172,11 @@ public function __construct(Settings $settings, string $version) {
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $value = $this->settings->getSetting($fieldId); 
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input readonly type='text' id='$fieldId' name='$settingName' value='$value'>";
+        echo "<input class='regular-text' placeholder='Please select a version and save changes to populate hash.' readonly type='text' id='$fieldId' name='$settingName' value='$value'>";
         if (empty($description)) {
             return;
         }
@@ -216,19 +228,37 @@ public function __construct(Settings $settings, string $version) {
         return $input; //TODO add validation and sanitization
     }
 
-    public function update_send2crm_version($newVersion) {
+    public function update_send2crm_version($arguments) {
+        $currentVersion = $arguments['js_version'];
+        $currentUseCDN = $arguments['use_cdn'] ?? false;
         error_log('Updating Send2CRM Version'); //TODO Remove Debug statements
-        $currentVersion = $this->settings->getSetting('send2crm_js_version');
-        $useCDN = $this->settings->getSetting('send2crm_use_cdn') ?? false;
+        $newVersion = $this->settings->getSetting('js_version');
+        $newUseCDN = $this->settings->getSetting('use_cdn') ?? false;
+        $updateHash = false;
+        $downloadJS = false;
+        $removeJS = false;
         if ($currentVersion !== $newVersion) {
-            error_log("Updating Send2CRM Version from {$currentVersion} to {$newVersion}");
+            error_log("Updating Send2CRM Version from {$currentVersion} to {$newVersion}"); //TODO Remove Debug statements
 /*             if ($useCDN) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
                 $this->download_release_files($newVersion);
             } */
             $newHash = $this->getHash(SEND2CRM_CDN . "@{$newVersion}/");
-            $this->settings->updateSetting('send2crm_js_hash', $newHash); //TODO Check the hash is valid before saving?
-            $this->settings->updateSetting('send2crm_js_version', $newVersion);
+            if (empty($newHash)) {
+                add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );
+                $this->settings->update_setting('js_version', $currentVersion);
+                return;
+            }
+            $this->settings->update_setting('js_hash', $newHash); //TODO Check the hash is valid before saving?
+            
 
+
+
+
+
+        }
+        if ($useCDN !== $currentUseCDN) {
+                //$this->settings->update_setting('use_cdn', $useCDN);
+                error_log("Updating Send2CRM CDN from {$currentUseCDN} to {$useCDN}");
 
         }
     }
@@ -274,6 +304,9 @@ public function __construct(Settings $settings, string $version) {
     public function getHash(string $location): string {
         error_log('Get hash from '. $location . SEND2CRM_HASH_FILENAME); //TODO Add checks for bad paths to prevent critical erros
         $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
+        if (!$hash) {
+            return '';
+        }
         return $hash;
     }
 
@@ -345,7 +378,7 @@ public function __construct(Settings $settings, string $version) {
         
         // Filter releases by minimum version
         $filtered_releases = $this->filter_by_minimum_version($releases);
-        
+        $this->releases = $filtered_releases;
         return array(
             'success' => true,
             'releases' => $filtered_releases
@@ -366,7 +399,7 @@ public function __construct(Settings $settings, string $version) {
             $version = ltrim($release['tag_name'], 'v');
             
             if (version_compare($version, $this->minimum_version, '>=')) {
-                $filtered[] = $release;
+                $filtered[$release['tag_name']] = $release;
             }
         }
         

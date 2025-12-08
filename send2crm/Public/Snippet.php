@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit;
 #region Constants
 define('JS_FOLDERNAME', 'js/');
 define('SNIPPET_FILENAME', JS_FOLDERNAME . 'sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
-define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
+//define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 //define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
 //define('GITHUB_USERNAME', 'FuseInfoTech');
 //define('GITHUB_REPO', 'send2crmjs');
