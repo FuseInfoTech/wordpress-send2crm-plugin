@@ -67,7 +67,10 @@ public function __construct(Settings $settings, string $version) {
     public function initialize_settings() {
 
         $versionTabName = 'default_tab';
+
+        
         //Create section for cookies settings
+
         $versionSectionName = $this->settings->add_section( //TODO add custom callback for version section
             'version', 
             'Version Configuration', 
@@ -217,40 +220,81 @@ public function __construct(Settings $settings, string $version) {
 
     public function update_send2crm_version($arguments) {
         $currentVersion = $arguments['js_version'];
-        $currentUseCDN = $arguments['use_cdn'] ?? false;
+        $currentUseCDN = $arguments['use_cdn'] === '1' ? true : false;
         error_log('Updating Send2CRM Version'); //TODO Remove Debug statements
         $newVersion = $this->settings->getSetting('js_version');
-        $newUseCDN = $this->settings->getSetting('use_cdn') ?? false;
+        $newUseCDN = $this->settings->getSetting('use_cdn') === '1' ? true : false;
         $updateHash = false;
+        $checkHash = false;
         $downloadJS = false;
         $removeJS = false;
         if ($currentVersion !== $newVersion) {
             error_log("Updating Send2CRM Version from {$currentVersion} to {$newVersion}"); //TODO Remove Debug statements
-/*             if ($useCDN) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
-                $this->download_release_files($newVersion);
-            } */
+            $updateHash = true;
+            if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
+                $downloadJS = true;
+            }
+        } else if ($newUseCDN !== $currentUseCDN) {
+            error_log("Updating Send2CRM CDN from {$currentUseCDN} to {$useCDN}");
+            $checkHash = true;
+            if ($newUseCDN && $this->release_file_exists($newVersion)) { 
+                $removeJS = true;
+            } else if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
+                $downloadJS = true;
+            }
+        }
+        if ($updateHash) {
             $newHash = $this->getHash(SEND2CRM_CDN . "@{$newVersion}/");
             if (empty($newHash)) {
                 add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );
                 $this->settings->update_setting('js_version', $currentVersion);
-                return;
+                $this->settings->update_setting('use_cdn', $currentUseCDN);
+            } else {
+                $this->settings->update_setting('js_hash', $newHash); //TODO Check the hash is valid before saving?
             }
-            $this->settings->update_setting('js_hash', $newHash); //TODO Check the hash is valid before saving?
-            
-
-
-
-
-
         }
-        if ($useCDN !== $currentUseCDN) {
-                //$this->settings->update_setting('use_cdn', $useCDN);
-                error_log("Updating Send2CRM CDN from {$currentUseCDN} to {$useCDN}");
+        $integrityCheckPassed = false; 
+        if ($checkHash) {
+            $integrityCheckPassed = $this->check_integrity();//TODO Implement Integrity Check
+        }
 
+        if ($downloadJS && $integrityCheckPassed) {
+            $results = $this->download_release_files($newVersion);
+            if ($results['success'] === false) {
+                $this->settings->update_setting('js_version', $currentVersion);
+                $this->settings->update_setting('use_cdn', $currentUseCDN);
+            }
+            add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );       
+        }
+
+        if ($removeJS) {
+            //TODO Remove JS
+            $success = $this->remove_release_files($currentVersion);
+            if ($success === false) {
+                add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to remove local files for {$currentVersion}", 'error' );
+            }
         }
     }
 
+    public function check_integrity() {
+        return true;
+    }
 
+    public function remove_release_files($version) {
+        $upload_dir = wp_upload_dir();
+        $success = false;
+        if (file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME)) {
+            $success = unlink($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
+        }
+        return $success;
+    }
+
+
+
+    public function release_file_exists($version): bool {
+        $upload_dir = wp_upload_dir();
+        return file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
+    }
 
     /**
      * Get the hash of the Send2CRM JS file at the provided location.
@@ -396,7 +440,7 @@ public function __construct(Settings $settings, string $version) {
     /**
      * Download specific files from a Send2CRM release
      */
-    public function download_release_files($tag_name) {
+    public function download_release_files(string $tag_name): array {
         // Files to download
         $files_to_download = array(
             SEND2CRM_JS_FILENAME,
