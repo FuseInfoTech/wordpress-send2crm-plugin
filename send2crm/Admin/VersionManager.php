@@ -116,7 +116,7 @@ public function __construct(Settings $settings, string $version) {
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
             add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
-            add_action('update_option_send2crm_settings_option', array($this, 'update_send2crm_version'));
+            add_filter('pre_update_option_send2crm_settings_option', array($this, 'filter_version_settings'),10,3);
         }
     }
 
@@ -130,7 +130,7 @@ public function __construct(Settings $settings, string $version) {
         </div>
         <?php
     }
-    public function render_version_input(array $arguments) : void {
+    public function render_version_input($arguments) : void {
         $fieldId = $arguments['id'];
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
@@ -144,9 +144,11 @@ public function __construct(Settings $settings, string $version) {
             $this->fetch_releases();
         }
         echo "<select id='$fieldId' name='$settingName'>";
+        $defaultSelected = empty($value) ? 'selected' : '';
+        echo "<option value='' $defaultSelected>Select a version</option>";
         foreach ($this->releases as $version => $release) {
-           $publishedAt = date('Y-m-d',strtotime($release['published_at']));
-           echo "<option value='$version' ".($value == $version ? 'selected' : '').">$version (Published $publishedAt)</option>";
+            $publishedAt = date('Y-m-d',strtotime($release['published_at']));
+            echo "<option value='$version' ".($value == $version ? 'selected' : '').">$version (Published $publishedAt)</option>";
         }
         echo "</select>";
         echo "<button id='fetch-releases' class='button button-primary'><span style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
@@ -191,41 +193,20 @@ public function __construct(Settings $settings, string $version) {
         echo "<p class='description'>$description</p>";
     }
 
-    /**
-     * Callback for displaying the text input field.
-     * 
-     * @since   1.0.0
-     * @param   string  $fieldId        The ID of the field.
-     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
-     */
-    public function render_text_input(array $arguments): void {
-        $fieldId = $arguments['id'];
-        $fieldDetails = $this->settings->get_field($fieldId);
-        // Get the current saved value 
-        $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId,$optionGroup); 
-        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
-        $description = $fieldDetails['description'];
-        // Render the input field 
-        echo "<input class='regular-text' type='text' id='$fieldId' name='$settingName' value='$value'>";
-        if (empty($description)) {
-            return;
+    public function filter_version_settings(array $newValue = [], array | string $currentValue  = "", $optionName  = "") : array {
+        if ( empty($optionName) || empty($newValue) || $optionName != 'send2crm_settings_option') {
+            return $newValue;
         }
-        echo "<p class='description'>$description</p>";
-    }
-
-    public function sanitize_and_validate_version_settings($input) {
-        return $input; //TODO add validation and sanitization
-    }
-
-    public function update_send2crm_version($arguments) {
-        $currentVersion = $arguments['js_version'];
-        $currentUseCDN = $arguments['use_cdn'] === '1' ? true : false;
+        $currentVersion = '';
+        $currentUseCDN = false;
+        if (empty($currentValue) === false) {
+            $currentVersion = array_key_exists('js_version', $currentValue) ? $currentValue['js_version'] : '';
+            $currentUseCDN = array_key_exists('use_cdn', $currentValue) ? ($currentValue['use_cdn'] === '1' ? true : false) : false;
+        }
         error_log('Updating Send2CRM Version'); //TODO Remove Debug statements
-        $newVersion = $this->settings->getSetting('js_version');
-        $newUseCDN = $this->settings->getSetting('use_cdn') === '1' ? true : false;
+        $newVersion = array_key_exists('js_version', $newValue) ? $newValue['js_version'] : $currentVersion;
+        $newUseCDN = array_key_exists('use_cdn', $newValue) ? ($newValue['use_cdn'] === '1' ? true : false) : false;
         $updateHash = false;
-        $checkHash = false;
         $downloadJS = false;
         $removeJS = false;
         if ($currentVersion !== $newVersion) {
@@ -235,37 +216,37 @@ public function __construct(Settings $settings, string $version) {
                 $downloadJS = true;
             }
         } else if ($newUseCDN !== $currentUseCDN) {
-            error_log("Updating Send2CRM CDN from {$currentUseCDN} to {$useCDN}");
-            $checkHash = true;
             if ($newUseCDN && $this->release_file_exists($newVersion)) { 
                 $removeJS = true;
             } else if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
                 $downloadJS = true;
             }
         }
+
         if ($updateHash) {
+            error_log("Updating Send2CRM CDN from {$currentUseCDN} to {$useCDN}");
             $newHash = $this->getHash(SEND2CRM_CDN . "@{$newVersion}/");
             if (empty($newHash)) {
                 add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );
-                $this->settings->update_setting('js_version', $currentVersion);
-                $this->settings->update_setting('use_cdn', $currentUseCDN);
-            } else {
-                $this->settings->update_setting('js_hash', $newHash); //TODO Check the hash is valid before saving?
+                $newValue['js_version'] = $currentVersion;
+                $newValue['use_cdn'] = $currentUseCDN ? '1' : '';
+                return $newValue;
             }
-        }
-        $integrityCheckPassed = false; 
-        if ($checkHash) {
-            $integrityCheckPassed = $this->check_integrity();//TODO Implement Integrity Check
+            $newValue['js_hash'] = $newHash; //TODO Check the hash is valid before saving?
         }
 
-        if ($downloadJS && $integrityCheckPassed) {
+        if ($downloadJS && $this->check_integrity()) { //TODO implement integrity check fully
             $results = $this->download_release_files($newVersion);
             if ($results['success'] === false) {
-                $this->settings->update_setting('js_version', $currentVersion);
-                $this->settings->update_setting('use_cdn', $currentUseCDN);
+                $newValue['js_version'] = $currentVersion;
+                $newValue['use_cdn'] = $currentUseCDN ? '1' : '';
+                add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );       
+                return $newValue;
             }
-            add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );       
+            add_settings_error( 'js_version', esc_attr( 'settings_updated' ), $newVersion . ' downloaded successfully!', 'updated' );
         }
+
+
 
         if ($removeJS) {
             //TODO Remove JS
@@ -274,6 +255,8 @@ public function __construct(Settings $settings, string $version) {
                 add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to remove local files for {$currentVersion}", 'error' );
             }
         }
+
+        return $newValue;
     }
 
     public function check_integrity() {
