@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) exit;
 define('VERSION_MANAGER_FILENAME', 'js/version-manager.js'); //TODO move this to a constant either in the namespace or in the class.
 define('GITHUB_USERNAME', 'FuseInfoTech');
 define('GITHUB_REPO', 'send2crmjs');
-define('MINIMUM_VERSION', '1.20.0');
+define('MINIMUM_VERSION', '1.21.0');
 define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
@@ -139,19 +139,14 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        //echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
-        if (empty($releases)) {
+
+/*         if (empty($releases)) {
             $this->fetch_releases();
-        }
-        echo "<select id='$fieldId' name='$settingName'>";
-        $defaultSelected = empty($value) ? 'selected' : '';
-        echo "<option value='' $defaultSelected>Select a version</option>";
-        foreach ($this->releases as $version => $release) {
-            $publishedAt = date('Y-m-d',strtotime($release['published_at']));
-            echo "<option value='$version' ".($value == $version ? 'selected' : '').">$version (Published $publishedAt)</option>";
-        }
+        } */
+        echo "<select id='$fieldId' name='$settingName' data-current-version='$value'>";
+        echo "<option value='' selected>DEBUG:No releases found. Click the Refresh button to fetch releases.</option>";
         echo "</select>";
-        echo "<button id='fetch-releases' class='button button-primary'><span style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
+        echo "<button id='fetch-releases' class='button button-primary'><span id='fetch-icon' style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
         if (empty($description)) {
             return;
         }
@@ -307,9 +302,11 @@ public function __construct(Settings $settings, string $version) {
         );
 
         $upload_dir = wp_upload_dir();
+        //TODO update this script and object to descripe its function that that only fetches releases
         wp_localize_script($versionManagerJSId, 'send2crmReleases', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('send2crm_releases_nonce'),
+            'version_element_id' => "js_version",
         ));
     }
 
@@ -392,7 +389,6 @@ public function __construct(Settings $settings, string $version) {
         
         // Filter releases by minimum version
         $filtered_releases = $this->filter_by_minimum_version($releases);
-        $this->releases = $filtered_releases;
         return array(
             'success' => true,
             'releases' => $filtered_releases

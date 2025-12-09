@@ -1,10 +1,30 @@
 
 jQuery(document).ready(function($) {
-    var versionElement = $('#js_version');
-    
+    let fetchIcon = $('#fetch-icon');
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .dashicons.spin {
+        animation: dashicons-spin 1s infinite;
+        animation-timing-function: linear;
+        }
+
+        @keyframes dashicons-spin {
+        0% {
+            transform: rotate( 0deg );
+        }
+        100% {
+            transform: rotate( 360deg );
+        }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    displayReleases();
     $('#fetch-releases').on('click', function() {
         var fetchButton = $(this);
-        fetchButton.prop('disabled', true).text('Fetching...');
+        fetchButton.prop('disabled', true);
+        fetchIcon.addClass('spin');
         
         $.ajax({
             url: send2crmReleases.ajax_url,
@@ -15,74 +35,85 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success && response.releases) {
-                    displayReleases(response.releases);
+                    localStorage.setItem('send2crm_releases', JSON.stringify(response.releases));
+                    displayReleases();
                 } else {
-                    $('#releases-container').html(
-                        '<div class="notice notice-error"><p>' + 
-                        (response.message || 'Failed to fetch releases') + 
-                        '</p></div>'
-                    );
+                    addError(response.message);
                 }
+                fetchButton.prop('disabled', false);
+                fetchIcon.removeClass('spin');
             },
             error: function() {
-                $('#releases-container').html(
-                    '<div class="notice notice-error"><p>Failed to fetch releases</p></div>'
-                );
+                addError();
             },
             complete: function() {
-                fetchButton.prop('disabled', false).text('Refresh Releases');
+                fetchButton.prop('disabled', false);
+                fetchIcon.removeClass('spin');
             }
         });
     });
-  
-    function displayReleases(releases) {
-        var html = '<h2>Available Releases</h2>';
 
-        var version = versionElement.val();
 
-        if (releases.length === 0) {
-            html += '<p>No releases found matching the criteria.</p>';
-        } else {
-            html += '<table id="releases-header" class="wp-list-table widefat fixed striped">';
-            html += '<thead><tr><th>Version</th><th>Name</th><th>Published</th><th>Actions</th></tr></thead>';
-            html += '</table>';
-            html += '<div style="max-height: 300px; overflow-y: auto;">';
-            html += '<table id="releases-body" class="wp-list-table widefat fixed striped">';
-            html += '<tbody>';
-            
-            releases.forEach(function(release) {
-                html += '<tr>';
-                html += '<td><strong>' + release.tag_name + '</strong></td>';
-                html += '<td>' + release.name + '</td>';
-                html += '<td>' + new Date(release.published_at).toLocaleDateString() + '</td>';
-                html += '<td>';
-                html += '<a href="' + release.html_url + '" target="_blank" class="button button-small">View</a> ';
-                if (release.tag_name === version) {
-                    html += '<span class="button button-small button-primary"><span class="dashicons dashicons-saved" style="font-size: 13px; width: 13px; height: 13px; margin-top: 5px;"></span> Current Version</span>';
-                } else {
-                    html += '<button class="button button-small select-version" data-tag="' + release.tag_name + '">Select Version</button>';
-                }
-                html += '</td>';
-                html += '</tr>';
+    function addError(message) {
+        let errorHtml = $('<div id="settings-error-fetch_failed" class="notice notice-error settings-error is-dismissible"><p><strong>' + 
+            (message || 'Something went wrong while fetching releases.') + 
+            '</strong></p><button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button></div>');
+
+        errorHtml.on('click', 'button.notice-dismiss', function() {
+
+            $(this).closest('.notice').fadeTo(100, 0, function() {
+                $(this).slideUp(100, function() {
+                    $(this).remove();
+                });
             });
-            
-            html += '</tbody></table></div>';
-        }
-        
-        $('#releases-container').html(html);
-    }
-        
-    // Handle notice dismiss button
-    $(document).on('click', '#releases-container .notice-dismiss', function() {
-        $(this).closest('.notice').fadeOut(400, function() {
-            $(this).remove();
         });
-    });
-    
-    // Handle download button clicks
-    $(document).on('click', '.select-version', function() {
-        let selectVersionButton = $(this);
-        let tagName = selectVersionButton.data('tag');
-        versionElement.val(tagName);
-    });
+        $('div.wrap').prepend(errorHtml);
+    }
+  
+    function displayReleases() {
+        let versionElement = $('#' + send2crmReleases.version_element_id);
+        let currentVersion = versionElement.data('current-version');
+        let releases = null;
+        const storedReleases = localStorage.getItem('send2crm_releases');
+
+        if (storedReleases) {
+            try {
+                const parsedReleases = JSON.parse(storedReleases);
+                releases = Object.values(parsedReleases);
+                if (!Array.isArray(releases) || releases.length === 0) {
+                    releases = null;
+                }
+            } catch (error) {
+                console.error('Error parsing releases from localStorage. Clearing releases so we can try again:', error);
+                localStorage.removeItem('send2crm_releases');
+                releases = null;
+            }
+        }
+        // Options stores releases as an options array to be added to the select element.
+        let options = [];
+        if (releases) {
+            releases.forEach((release) => {
+            console.log(release);
+            options.push(
+                $('<option>', {
+                    value: release.tag_name,
+                    text: release.tag_name + ' - ( Published ' + (new Date(release.published_at)).toLocaleDateString()  +  ' )',
+                    selected: currentVersion === release.tag_name
+                })
+            );
+        });
+        } else {
+           options.push(
+                $('<option>', {
+                    value: '',
+                    text: 'No releases found. Click the Refresh button to fetch releases.',
+                    selected: true,
+                    disabled: true
+                })
+            );
+        }
+        //Clear Version Select Element and add options
+        versionElement.empty().append(options);
+
+    }
 });
