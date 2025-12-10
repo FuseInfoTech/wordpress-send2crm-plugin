@@ -110,7 +110,6 @@ public function __construct(Settings $settings, string $version) {
      */
     public function initializeHooks(bool $isAdmin): void {
         if ($isAdmin) {
-            error_log('Initializing Version Manager Hooks for Admin Page');
             //Hook on admin page to add javascript
             add_action('admin_enqueue_scripts', array($this,'insertVersionManagerJs'));
             //Hook on ajax call to retrieve send2crm releases
@@ -121,15 +120,13 @@ public function __construct(Settings $settings, string $version) {
     }
 
     #region Callbacks
-    public function renderVersionManagerSection(): void {
-        error_log('Render Version Manager Section');
-        ?>
-        <div class="wrap">      
-            <button id="fetch-releases" style="margin-top: 20px;" class="button button-primary ">Fetch Releases</button>
-            <div id="releases-container" style="margin-top: 15px;"></div>
-        </div>
-        <?php
-    }
+    
+    /**
+     * Render the Send2CRM.js version input select field.
+     *
+     * @since    1.0.0
+     * @param   array   $arguments  Array of arguments passed to the function by the action hook.
+     */
     public function render_version_input($arguments) : void {
         $fieldId = $arguments['id'];
         $fieldDetails = $this->settings->get_field($fieldId);
@@ -139,12 +136,8 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-
-/*         if (empty($releases)) {
-            $this->fetch_releases();
-        } */
         echo "<select id='$fieldId' name='$settingName' data-current-version='$value'>";
-        echo "<option value='' selected>DEBUG:No releases found. Click the Refresh button to fetch releases.</option>";
+        echo "<option value='' selected>No releases found. Click the Refresh button to fetch releases.</option>";
         echo "</select>";
         echo "<button id='fetch-releases' class='button button-primary'><span id='fetch-icon' style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
         if (empty($description)) {
@@ -153,6 +146,12 @@ public function __construct(Settings $settings, string $version) {
         echo "<p class='description'>$description</p>";
     }
 
+    /**
+     * Render the Hash input text field.
+     *
+     * @since    1.0.0
+     * @param   array   $arguments  Array of arguments passed to the function by the action hook.
+     */
     public function render_hash_input(array $arguments): void {
         $fieldId = $arguments['id'];
         error_log($fieldId);
@@ -170,6 +169,12 @@ public function __construct(Settings $settings, string $version) {
         echo "<p class='description'>$description</p>";
     }
 
+    /**
+     * Render the Use CDN input checkbox field.
+     *
+     * @since    1.0.0
+     * @param   array   $arguments  Array of arguments passed to the function by the action hook.
+     */
     public function render_cdn_input(array $arguments): void {
         $fieldId = $arguments['id'];
         error_log($fieldId);
@@ -188,6 +193,15 @@ public function __construct(Settings $settings, string $version) {
         echo "<p class='description'>$description</p>";
     }
 
+    /**
+     * Callback for the filter pre_update_option hook that updates the hash and version based on the input.
+     * 
+     * @since    1.0.0
+     * @param  array    $newValue   The new value of the option.
+     * @param  array    $currentValue   The current value of the option.
+     * @param  string   $optionName   The name of the option.
+     * @return array    The updated value of the option which will be saved to the database.
+     */
     public function filter_version_settings(array $newValue = [], array | string $currentValue  = "", $optionName  = "") : array {
         if ( empty($optionName) || empty($newValue) || $optionName != 'send2crm_settings_option') {
             return $newValue;
@@ -198,14 +212,12 @@ public function __construct(Settings $settings, string $version) {
             $currentVersion = array_key_exists('js_version', $currentValue) ? $currentValue['js_version'] : '';
             $currentUseCDN = array_key_exists('use_cdn', $currentValue) ? ($currentValue['use_cdn'] === '1' ? true : false) : false;
         }
-        error_log('Updating Send2CRM Version'); //TODO Remove Debug statements
         $newVersion = array_key_exists('js_version', $newValue) ? $newValue['js_version'] : $currentVersion;
         $newUseCDN = array_key_exists('use_cdn', $newValue) ? ($newValue['use_cdn'] === '1' ? true : false) : false;
         $updateHash = false;
         $downloadJS = false;
         $removeJS = false;
         if ($currentVersion !== $newVersion) {
-            error_log("Updating Send2CRM Version from {$currentVersion} to {$newVersion}"); //TODO Remove Debug statements
             $updateHash = true;
             if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
                 $downloadJS = true;
@@ -241,10 +253,7 @@ public function __construct(Settings $settings, string $version) {
             add_settings_error( 'js_version', esc_attr( 'settings_updated' ), $newVersion . ' downloaded successfully!', 'updated' );
         }
 
-
-
         if ($removeJS) {
-            //TODO Remove JS
             $success = $this->remove_release_files($currentVersion);
             if ($success === false) {
                 add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to remove local files for {$currentVersion}", 'error' );
@@ -253,12 +262,27 @@ public function __construct(Settings $settings, string $version) {
 
         return $newValue;
     }
-
-    public function check_integrity() {
+    /**
+     * Check the integrity of the Send2CRM JS file at the provided location using the hash stored in the database.
+     * This should be an extra security check in future, but currently not required.
+     * 
+     * 
+     * @since 1.0.0
+     * @return bool whether the Send2CRM JS file is valid.
+     */
+    public function check_integrity() :bool {
         return true;
     }
 
-    public function remove_release_files($version) {
+    /**
+     * Remove the Send2CRM JS file at the provided location.
+     *  
+     * @since 1.0.0
+     * 
+     * @param  string  $version  The version of the Send2CRM JS file to remove
+     * @return bool whether the Send2CRM JS file was successfully removed
+     */
+    public function remove_release_files($version) : bool {
         $upload_dir = wp_upload_dir();
         $success = false;
         if (file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME)) {
@@ -268,7 +292,14 @@ public function __construct(Settings $settings, string $version) {
     }
 
 
-
+    /**
+     * Check if the Send2CRM JS file at the provided location exists.
+     *  
+     * @since 1.0.0
+     * 
+     * @param  string  $version  The version of the Send2CRM JS file to check
+     * @return bool whether the Send2CRM JS file exists
+     */
     public function release_file_exists($version): bool {
         $upload_dir = wp_upload_dir();
         return file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
@@ -312,7 +343,16 @@ public function __construct(Settings $settings, string $version) {
 
     #endregion
 
-    public function getHash(string $location): string {
+    #region Private Functions
+    /**
+     * Get the content of the hash file at the provided location(folder).It will check for the SEND2CRM_HASH_FILENAME file.
+     * 
+     * @since 1.0.0
+     * 
+     * @param  string  $location  The folder where the hash file is located of the hash file.
+     * @return string the content of the hash file or an empty string if the file does not exist
+     */
+    private function getHash(string $location): string {
         error_log('Get hash from '. $location . SEND2CRM_HASH_FILENAME); //TODO Add checks for bad paths to prevent critical erros
         $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
         if (!$hash) {
@@ -323,9 +363,11 @@ public function __construct(Settings $settings, string $version) {
 
      /**
      * AJAX handler for fetching releases
+     * 
+     * @since 1.0.0
+     * 
      */
     public function ajax_fetch_releases() {
-        //TODO change github to send2crm
         check_ajax_referer('send2crm_releases_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
@@ -338,6 +380,9 @@ public function __construct(Settings $settings, string $version) {
 
      /**
      * AJAX handler for downloading releases
+     * 
+     * @since 1.0.0
+     * 
      */
     public function ajax_download_release() {
         check_ajax_referer('send2crm_releases_nonce', 'nonce');
@@ -356,10 +401,13 @@ public function __construct(Settings $settings, string $version) {
         wp_send_json($result);
     }
 
-        /**
+    /**
      * Fetch releases from GitHub API
+     * 
+     * @since 1.0.0
+     * @return array the result of fetching the releases including if the request was successful and releases as an array.
      */
-    public function fetch_releases() {
+    public function fetch_releases(): array {
         $api_url = "https://api.github.com/repos/{$this->githubUsername}/{$this->githubRepo}/releases";
         
         $response = wp_remote_get($api_url, array(
@@ -395,10 +443,15 @@ public function __construct(Settings $settings, string $version) {
         );
     }
 
-        /**
+    /**
      * Filter releases by minimum version
+     * 
+     * @since 1.0.0
+     * 
+     * @param array $releases the array of releases to filter
+     * @return array the filtered array of releases that are greater than or equal to the MINIMUM_VERSION constant
      */
-    private function filter_by_minimum_version($releases) {
+    private function filter_by_minimum_version(array $releases) : array {
         if (empty($this->minimum_version)) {
             return $releases;
         }
@@ -418,6 +471,11 @@ public function __construct(Settings $settings, string $version) {
 
     /**
      * Download specific files from a Send2CRM release
+     * 
+     * @since 1.0.0
+     * 
+     * @param string $tag_name the tag name of the release to download
+     * @return array the result of downloading the files including if the request was successful and file paths as an array
      */
     public function download_release_files(string $tag_name): array {
         // Files to download

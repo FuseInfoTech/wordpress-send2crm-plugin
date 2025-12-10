@@ -109,7 +109,7 @@ class Settings {
      * Add the Sections, Fields and register settings for the plugin.
      *
      * @since    1.0.0
-     * @param   $isAdmin    Whether the current request is for an administrative interface page.
+     * 
      */
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
@@ -299,8 +299,15 @@ class Settings {
         return $value;
     }
 
-        public function update_setting(string $key, string $value, string | null $groupName = null ): void {
- //TODO Remove debug Statements
+    /**
+     *  Updates the value of a settings based on the key and group name if provided.
+     * 
+     * @since   1.0.0
+     * @param   string  $key        The name of the setting to update.
+     * @param   string  $value      The new value of the setting.
+     * @param   string  $groupName  The name of the option group used to find the setting.
+     */
+    public function update_setting(string $key, string $value, string | null $groupName = null ): void {
         //escape the value before updating
         if (is_null($groupName)) {
             $fieldDetails = $this->fields[$key] ?? null;
@@ -397,7 +404,7 @@ class Settings {
      * @param   string  $key    The name of the setting.
      * @return  string  The option name for the setting.
      */
-    private function get_option_name(string $key) {
+    private function get_option_name(string $key) :string {
         if (empty($key)) {
             return "{$this->pluginSlug}_settings_option";
         }
@@ -416,6 +423,7 @@ class Settings {
      * @param   string  $fieldName      The name of the field.
      * @param   string  $fieldLabel     The label of the field.
      * @param   array   $fieldRenderCallback   The callback function for rendering the field.
+     * @param   string  $description    The description of the field. Text here will be displayed below the field in the settings menu. 
      * @param   string  $sectionKey     The name of the section to add the field to.
      * @param   string  $pageName       The name of the page to add the field to.
      * @param   string  $groupName      The name of the option group to add the field to.
