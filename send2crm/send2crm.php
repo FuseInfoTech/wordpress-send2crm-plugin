@@ -13,8 +13,8 @@
  * @link      https://fuseit.com
  * 
  * Plugin Name: Send2CRM
- * Plugin URI:      @TODO
- * Description:     @TODO
+ * Plugin URI:      http://wordpress.org/plugins/send2crm/
+ * Description:     Send2CRM is the official WordPress plugin for the Send2CRM service by FuseIT to seamlessly connect all your websites with your CRM.
  * Version: 1.0.0
  * Author: FuseIT
  * Author URI: https://fuseit.com

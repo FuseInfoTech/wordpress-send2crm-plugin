@@ -1,35 +1,33 @@
-=== Send2CRM Placeholder ===
-Contributors: (this should be a list of wordpress.org userid's)
-Tags: Send2CRM, Salesforce
-Requires at least: 6.0 TODO Work out how to select an appropriate minimum version
-Tested up to: 6.8
-Stable tag: 4.3 TODO update or remove if it is not required
+=== Send2CRM ===
+Contributors: christylernz
+Tags: Send2CRM, Salesforce, Analytics,CRM, Sales
+Requires at least: 6.8
+Tested up to: 6.9
+Stable tag: 1.0
 Requires PHP: 8.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Here is a short description of the plugin.  This should be no more than 150 characters.  No markup here.
+Send2CRM is the official WordPress plugin for the Send2CRM service by FuseIT to seamlessly connect all your websites with your CRM.
 
 == Description ==
 
-This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
+Send2CRM is the official WordPress plugin for Send2CRM by FuseIT Send2CRM seamlessly connects all your websites with your CRM. Leverage automation & AI, real-time customer insights, and dynamic website personalization all from within Salesforce to boost your sales conversion rates and shorten your sales cycle.            
+                                                                                                                                                                    
+**The advantages of Send2CRM in WordPress**
+Turn website activity into sales-ready insights, right inside Salesforce. Send2CRM connects your WordPress site directly to your CRM, giving your team the context they need to personalize outreach and close deals faster.
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+Key Benefits:
 
-A few notes about the sections above:
+* Real-time website activity tracked directly into Salesforce
 
-* "Contributors" is a comma separated list of wordpress.org usernames
-* "Tags" is a comma separated list of tags that apply to the plugin
-* "Requires at least" is the lowest version that the plugin will work on
-* "Tested up to" is the highest version that you've *successfully used to test the plugin*
-* Stable tag must indicate the Subversion "tag" of the latest stable version
+* Understand visitor intent for warmer, more effective follow-ups
 
-Note that the `readme.txt` value of stable tag is the one that is the defining one for the plugin.  If the `/trunk/readme.txt` file says that the stable tag is `4.3`, then it is `/tags/4.3/readme.txt` that'll be used for displaying information about the plugin.
+* Simple, low-effort way to boost conversions with personalised experiences
 
-If you develop in trunk, you can update the trunk `readme.txt` to reflect changes in your in-development version, without having that information incorrectly disclosed about the current stable version that lacks those changes -- as long as the trunk's `readme.txt` points to the correct stable tag.
+* Native Salesforce connection—no complex integrations or API maintenance
 
-If no stable tag is provided, your users may not get the correct version of your code.
+* Reliable, secure, and fully aligned with your existing Salesforce setup
 
 == Frequently Asked Questions ==
 
@@ -41,6 +39,11 @@ An answer to that question.
 
 Answer to foo bar dilemma.
 
+== Installation ==
+
+This is how you install the plugin. Open the plugin directory and select install and then activate.
+You will need to complete the setup in the Send2CRM Settings menu before using.
+
 == Screenshots ==
 
 1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Screenshots are stored in the /assets directory.
@@ -49,46 +52,5 @@ Answer to foo bar dilemma.
 == Changelog ==
 
 = 1.0 =
-* A change since the previous version.
-* Another change.
+* Initial Version
 
-= 0.5 =
-* List versions from most recent at top to oldest at bottom.
-
-== Upgrade Notice ==
-
-= 1.0 =
-Upgrade notices describe the reason a user should upgrade.  No more than 300 characters.
-
-= 0.5 =
-This version fixes a security related bug.  Upgrade immediately.
-
-== A brief Markdown Example ==
-
-Markdown is what the parser uses to process much of the readme file.
-
-[markdown syntax]: https://daringfireball.net/projects/markdown/syntax
-
-Ordered list:
-
-1. Some feature
-1. Another feature
-1. Something else about the plugin
-
-Unordered list:
-
-* something
-* something else
-* third thing
-
-Links require brackets and parenthesis:
-
-Here's a link to [WordPress](https://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax]. Link titles are optional, naturally.
-
-Blockquotes are email style:
-
-> Asterisks for *emphasis*. Double it up  for **strong**.
-
-And Backticks for code:
-
-`<?php code(); ?>`
