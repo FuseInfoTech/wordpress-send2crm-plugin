@@ -421,7 +421,7 @@ class Snippet {
         $sanitizedOutput = array();
 
         foreach ($input as $key => $value) {
-            $sanitizedOutput = sanitize_text_field($value);
+            $sanitizedOutput[$key] = sanitize_text_field($value);
             //TODO Add validation based oin the field type. Do we also need to do this on the front end to provide a better user expereience?
         }
         return $sanitizedOutput;
