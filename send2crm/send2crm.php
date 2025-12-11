@@ -91,6 +91,12 @@ class Send2CRM {
     public Snippet $snippet;
 
     /**
+     * Indicates if the plugin hooks has been initialized so we don't double hook.
+     *  
+     */
+    public bool $isInitialized = false;
+
+    /**
      * Define the core functionality of the plugin.
      *
      * Set the plugin name and the plugin version that can be used throughout the plugin.
@@ -109,19 +115,42 @@ class Send2CRM {
 
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
+        if ($this->isInitialized) return;
+        $this->initialize_hooks();
+    }
+
+    public function initialize_hooks() {
+
         $isAdmin = is_admin();
 
         if ($isAdmin)
         {
+            add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
             $this->settings->initializeHooks($isAdmin);
         } else {
 
             $this->snippet->initializeHooks($isAdmin);
         }
 
+        $this->isInitialized = true;
     }
 
-
+    #region Callbacks
+    
+    /** 
+     *  Add a settings link to the plugin page that opens the plugin settings page.
+     * 
+     * @since    1.0.0
+     * @param   array   $links  The standard links on to the plugin page.
+     * @return  array           The changed list of links with our custom links added.
+     */
+    public function add_action_links(array $links): array {
+        $customLinks = array(
+            '<a href="' . admin_url( "admin.php?page={$this->slug}" ) . '">Settings</a>',
+        );
+        return array_merge( $customLinks,$links);
+    }
+    #endregion
 }
 
 //Start the plugin
