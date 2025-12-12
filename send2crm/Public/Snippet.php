@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Send2CRM\Public;
 
 use Send2CRM\Admin\Settings;
-
+use Send2CRM\Admin\VersionManager;
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('SNIPPET_FILENAME', 'js/standard-snippet.js');
+define('JS_FOLDERNAME', 'js/');
+define('SNIPPET_FILENAME', JS_FOLDERNAME . 'sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
 define('ADDITIONAL_SETTINGS_FILENAME', 'js/additional-settings.js');
 #endregion
 /**
@@ -45,36 +46,26 @@ class Snippet {
         error_log('Initializing Public facing Send2CRM Plugin'); //TODO Remove Debug statements
         $this->settings = $settings;
         $this->version = $version;
-        
-
         //Create the required settings as the default settings group, section.
-        $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'));
+        $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
 
         $this->settings->add_section(
             'settings', 
             'Required Settings', 
             'The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.'
         );
-
         $this->settings->add_field(
-            'send2crm_api_key',
+            'api_key',
             'Send2CRM API Key',
             array($this, 'render_text_input'),
             'Enter the shared API key configured for your service in Salesforce.'
         );
 
         $this->settings->add_field(
-            'send2crm_api_domain',
+            'api_domain',
             'Send2CRM API Domain',
             array($this, 'render_text_input'),
             'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.'
-        );
-
-        $this->settings->add_field(
-            'send2crm_js_location',
-            'Send2CRM JS Location',
-            array($this, 'render_text_input'),
-            'Enter the location of the Send2CRM JavaScript file.'
         );
 
         //Create additional settings groups and sections
@@ -400,10 +391,26 @@ class Snippet {
             $customizeTabName,
             $customizeGroupName
         );
-
-
-        
     }
+
+    /**
+     * Register all the hooks of this class.
+     *
+     * @since    1.0.0
+     * @param   $isAdmin    Whether the current request is for an administrative interface page.
+    */
+    public function initializeHooks(bool $isAdmin): void
+    {
+        if ($isAdmin) {
+            error_log('Skipping Snippet Hooks for Admin Page'); //TODO Remove Debug statements;
+            return;
+        }
+        error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
+        //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
+        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
+        add_action('wp_enqueue_scripts',array($this,'applyAdditionalSettings'));
+    }
+
 
     #region Settings API Callbacks
     /**
@@ -421,7 +428,7 @@ class Snippet {
         $sanitizedOutput = array();
 
         foreach ($input as $key => $value) {
-            $sanitizedOutput = sanitize_text_field($value);
+            $sanitizedOutput[$key] = sanitize_text_field($value);
             //TODO Add validation based oin the field type. Do we also need to do this on the front end to provide a better user expereience?
         }
         return $sanitizedOutput;
@@ -454,24 +461,6 @@ class Snippet {
     #endregion
 
     #region Public Functions
-    /**
-     * Register all the hooks of this class.
-     *
-     * @since    1.0.0
-     * @param   $isAdmin    Whether the current request is for an administrative interface page.
-    */
-    public function initializeHooks(bool $isAdmin): void
-    {
-        if ($isAdmin) {
-            error_log('Skipping Snippet Hooks for Admin Page'); //TODO Remove Debug statements;
-            return;
-        }
-        error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
-        //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
-        add_action('wp_enqueue_scripts',array($this,'applyAdditionalSettings'));
-    }
-
 
 
     /**
@@ -481,28 +470,41 @@ class Snippet {
      */
     public function insertSnippet() {
         error_log('Inserting Send2CRM Snippet');
-        $jsLocation = $this->settings->getSetting('send2crm_js_location');
-        $apiKey = $this->settings->getSetting('send2crm_api_key');
-        $apiDomain = $this->settings->getSetting('send2crm_api_domain');
 
-        if (empty($jsLocation) || empty($apiKey) || empty($apiDomain)) {
+        $apiKey = $this->settings->getSetting('api_key');
+        $apiDomain = $this->settings->getSetting('api_domain');
+        $jsVersion = $this->settings->getSetting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
+        $jsHash = $this->settings->getSetting('js_hash');
+        $useCDN = $this->settings->getSetting('use_cdn') ?? false;
+
+        $upload_dir = wp_upload_dir();
+        
+        $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . "{$jsVersion}/";
+
+        if (empty($apiKey) 
+            || empty($apiDomain)
+            || empty($jsVersion)) 
+        {
             error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
+        $snippetPath = plugin_dir_path( __FILE__ ) . SNIPPET_FILENAME;
+        $snippetVersion = file_exists($snippetPath) ? filemtime($snippetPath) : $this->version;
         $snippetId = "{$this->settings->pluginSlug}-snippet";
+
         
-        if (wp_register_script( $snippetId, $snippetUrl, array(), $this->version, false ) === false)
+        if (wp_register_script( $snippetId, $snippetUrl, array(), $snippetVersion, false ) === false)
         {
             error_log('Snippet could not be registered - Send2CRM will not be activated.');
             return;
         } 
         
-
         $snippetJson = json_encode(array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
-            'js_location' => $jsLocation . "?ver={$this->version}"
+            'js_location' => $jsPath . SEND2CRM_JS_FILENAME . "?ver={$jsVersion}",
+            'hash' => $jsHash
         ));
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         error_log('Snippet enqueued at' . $snippetUrl);
@@ -518,8 +520,10 @@ class Snippet {
         error_log('Apply Additional Settings');
 
         $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
+        $settingJsPath = plugin_dir_path( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
         $settingJsId = "{$this->settings->pluginSlug}-settings";
-        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $this->version, false ) === false)
+        $settingJSVersion = file_exists($settingJsPath) ? filemtime($settingJsPath) : $this->version;
+        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $settingJSVersion, false ) === false)
         {
             error_log('Additional Settings Javascript could not be registered - No Additional Settings will be applied.');
             return;
@@ -573,5 +577,5 @@ class Snippet {
     }
 
     #endregion
-
+    
 }

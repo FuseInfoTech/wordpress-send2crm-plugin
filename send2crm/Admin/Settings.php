@@ -6,6 +6,10 @@ namespace Send2CRM\Admin;
 
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
+#region Constants
+DEFINE('DEFAULT_GROUPING_NAME', 'settings');
+DEFINE('DOCS_URL', 'https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2196471809/JavaScript+client');
+#endregion
 
 /**
  * Send2CRM Class that contains and manages plugnin settings and 
@@ -74,11 +78,11 @@ class Settings {
         error_log('Init Send2CRM Settings'); //TODO Remove Debug statements
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
+        //TODO Check if we still need $menuName
         $this->menuName = $menuName;
         $this->fields = array();
         $this->sections = array();
         $this->groups = array();
-        
     }
 
     /**
@@ -100,16 +104,15 @@ class Settings {
     }
 
 
-    
+    #region Callbacks
     /**
      * Add the Sections, Fields and register settings for the plugin.
      *
      * @since    1.0.0
+     * 
      */
     public function initializeSettings(): void {
         error_log('Creating Send2CRM Settings');
- 
-
         // Register the setting
         //TODO make the settings use an array to avoid pollution the wp_options table with many settings
         foreach ($this->groups as $groupName => $groupDetails) {
@@ -120,7 +123,6 @@ class Settings {
                 'show_in_rest' => false,    
                 'sanitize_callback' => $groupDetails['callback'],
             );
-
             register_setting($groupName, $groupDetails['option_name'], $registerSettingParameters);
         }   
 
@@ -190,42 +192,60 @@ class Settings {
         // check if the user have submitted the settings. Wordpress will add the "settings-updated" $_GET parameter to the url
         if (isset($_GET['settings-updated']))
         {
+            // Add settings saved message with the class of "updated"
             add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', 'Settings saved.', 'success');
         }
-
         error_log('Displaying Setting Page from Callback'); //TODO Remove Debug statements
         ?>
         <div class="wrap"> 
             <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
-
-            <?php
-            
-                $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'default_tab'; ?>
-
-                <h2 class="nav-tab-wrapper">
-                    <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
-                        <a href="?page=<?php echo $this->menuSlug; ?>&tab=<?php echo $groupDetails['tab_name']; ?>" class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>"><?php esc_html_e($groupDetails['tab_title'], $this->pluginSlug); ?></a>
-                    <?php } ?> 
-                </h2>
-                <form method="post" action="options.php"> 
-                    <?php
-                        foreach ($this->groups as $groupName => $groupDetails) { 
-                            if ($activeTab === $groupDetails['tab_name']) {
-                                // Output security fields 
-                                settings_fields($groupName); 
-                                // Output sections and fields 
-                                do_settings_sections( $groupDetails['tab_name'] );
-                            }
+            <p>Additional Settings should be left empty unless you require changes from the default settings. For more information on Send2CRM configuration please visit <a target="_blank" href=<?php echo DOCS_URL; ?>>Javascript Client Documentation</a>.</p> 
+            <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'default_tab'; ?>
+            <h2 class="nav-tab-wrapper">
+                <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
+                    <a href="?page=<?php echo $this->menuSlug; ?>&tab=<?php echo $groupDetails['tab_name']; ?>" class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>"><?php esc_html_e($groupDetails['tab_title'], $this->pluginSlug); ?></a>
+                <?php } ?> 
+            </h2>
+            <form method="post" action="options.php"> 
+                <?php
+                    foreach ($this->groups as $groupName => $groupDetails) { 
+                        if ($activeTab === $groupDetails['tab_name']) {
+                            // Output security fields 
+                            settings_fields($groupName); 
+                            // Output sections and fields 
+                            do_settings_sections( $groupDetails['tab_name'] );
                         }
-                        // Output save button 
-                        submit_button(); 
-                    ?> 
-                </form> 
-            
+                    }
+                    // Output save button 
+                    submit_button(); 
+                ?> 
+            </form> 
         </div> 
         <?php 
     }
 
+    /**
+     * Renders a section.
+     * 
+     * @since   1.0.0
+     *  
+     *  @param   array   $arguments  The arguments passed to the callback function.
+     */
+    public function default_render_section(array $arguments): void {
+        $sectionId = $arguments['id'];
+        $sectionDetails = $this->sections[$sectionId];
+        if (empty($sectionDetails)) {
+            return; 
+        }
+        $description = $sectionDetails['description'];
+        if (empty($description)) {
+            return;
+        }
+        echo "<p>$description</p>";
+    }
+    #endregion
+
+    #region Public Functions
     /**
      * Returns the setting field array with metadata of the Setting API field.
      *
@@ -253,6 +273,7 @@ class Settings {
         }
         return array();
     }
+    
 
     /**
      * Retrieves a specific setting from the database.
@@ -279,6 +300,32 @@ class Settings {
     }
 
     /**
+     *  Updates the value of a settings based on the key and group name if provided.
+     * 
+     * @since   1.0.0
+     * @param   string  $key        The name of the setting to update.
+     * @param   string  $value      The new value of the setting.
+     * @param   string  $groupName  The name of the option group used to find the setting.
+     */
+    public function update_setting(string $key, string $value, string | null $groupName = null ): void {
+        //escape the value before updating
+        if (is_null($groupName)) {
+            $fieldDetails = $this->fields[$key] ?? null;
+            if (is_null($fieldDetails)) {
+                error_log( "Field {$key} not found." );
+                return;
+            }
+            $groupName = $fieldDetails['option_group'] ?? $this->get_option_group_name('settings');
+        }
+
+        $optionName = $this->groups[$groupName]['option_name'];
+        $array = get_option($optionName, array());
+        $array[$key] = $value;
+        error_log("Update Setting: {$optionName}[{$key}] with value: {$value}");
+        update_option($optionName, $array);
+    }
+
+    /**
      * Retrieves the name of a specific setting from the database.
      * 
      * @since   1.0.0
@@ -292,9 +339,8 @@ class Settings {
         return $settingName;    
     }
 
-
-
-
+    #endregion
+    #region Private Functions
 
     /**
      * Retrieves the section name for a specific setting.  
@@ -303,7 +349,14 @@ class Settings {
      * @param   string  $key The name of the setting.
      * @return  string  The section name for the setting.
      */
-    private function get_section_name(string $key) {
+    private function get_section_name(string $key) : string {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_section";
+        }
+        //If the key is already a section name , don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_section" )  ) {
+            return $key;
+        }
         return "{$this->pluginSlug}_{$key}_section";
     }
 
@@ -315,6 +368,13 @@ class Settings {
      * @return  string  The page name for the setting.
      */
     private function get_page_name(string $key) {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_page";
+        }
+        //If the key is already a page name, don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_page")) {
+            return $key;
+        }
         return "{$this->pluginSlug}_{$key}_page";
     }
 
@@ -326,6 +386,13 @@ class Settings {
      * @return  string  The option group name for the setting.
      */
     private function get_option_group_name(string $key) {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_option_group";
+        }
+        //If the key is already an option group name, don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_option_group")) {
+            return $key;
+        }
         return "{$this->pluginSlug}_{$key}_option_group";
     }
 
@@ -337,10 +404,18 @@ class Settings {
      * @param   string  $key    The name of the setting.
      * @return  string  The option name for the setting.
      */
-    private function get_option_name(string $key) {
+    private function get_option_name(string $key) :string {
+        if (empty($key)) {
+            return "{$this->pluginSlug}_settings_option";
+        }
+        //If the key is already an option name, don't modify it
+        if (str_starts_with( $key, $this->pluginSlug ) && str_ends_with( $key, "_option")) {
+            return $key;
+        }
         return "{$this->pluginSlug}_{$key}_option";
     }
 
+    //TODO Separate Public and private functions into correct regions
     /**
      * Adds a field to the settings page.
      * 
@@ -348,6 +423,7 @@ class Settings {
      * @param   string  $fieldName      The name of the field.
      * @param   string  $fieldLabel     The label of the field.
      * @param   array   $fieldRenderCallback   The callback function for rendering the field.
+     * @param   string  $description    The description of the field. Text here will be displayed below the field in the settings menu. 
      * @param   string  $sectionKey     The name of the section to add the field to.
      * @param   string  $pageName       The name of the page to add the field to.
      * @param   string  $groupName      The name of the option group to add the field to.
@@ -370,7 +446,7 @@ class Settings {
             'option_group' => $this->get_option_group_name($groupName),
             'description' => $description
         );
-        error_log('Field added: ' . serialize($this->fields[$fieldName]));
+        error_log('Field added: ' . serialize($this->fields[$fieldName])); //TODO Remove debug Statements
     }
 
     /**
@@ -402,25 +478,7 @@ class Settings {
         return $sectionName;
     }
 
-    /**
-     * Renders a section.
-     * 
-     * @since   1.0.0
-     *  
-     *  @param   array   $arguments  The arguments passed to the callback function.
-     */
-    public function default_render_section(array $arguments): void {
-        $sectionId = $arguments['id'];
-        $sectionDetails = $this->sections[$sectionId];
-        if (empty($sectionDetails)) {
-            return; 
-        }
-        $description = $sectionDetails['description'];
-        if (empty($description)) {
-            return;
-        }
-        echo "<p>$description</p>";
-    }
+
 
     /**
      * Adds a group to the settings page.
@@ -441,11 +499,4 @@ class Settings {
         );
         return $groupName;
     }
-
-
-
-    
-
-    
-
 }
