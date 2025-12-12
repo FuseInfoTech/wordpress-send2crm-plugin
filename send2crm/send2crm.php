@@ -20,8 +20,8 @@
  * Author URI: https://fuseit.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Requires PHP:    8.3
- * Requires at least: 6.8
+ * Requires PHP:    8.1
+ * Requires at least: 6.5.7
  * 
  */
 #endregion
@@ -86,6 +86,20 @@ class Send2CRM {
     public Settings $settings;
 
     /**
+     * A reference to the Snippet class that inserts the Send2CRM.js.
+     *
+     * @since    1.0.0
+     */
+    public Snippet $snippet;
+
+    /**
+     * A reference to the VersionManager class that handles version updates in the admin page.
+     *
+     * @since    1.0.0
+     */
+    public VersionManager $versionManager;
+
+    /**
      * Indicates if the plugin hooks has been initialized so we don't double hook.
      *  
      */
@@ -106,8 +120,8 @@ class Send2CRM {
         $this->menuName = SEND2CRM_MENU_NAME;
         //Register settings,but the hook initialization should only run on Admin area only.
         $this->settings = new Settings($this->slug, $this->menuName);
-        $versionManager = new VersionManager($this->settings, $this->version);
-        $snippet = new Snippet($this->settings, $this->version);
+        $this->$versionManager = new VersionManager($this->settings, $this->version);
+        $this->$snippet = new Snippet($this->settings, $this->version);
 
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
@@ -123,12 +137,10 @@ class Send2CRM {
         {
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
             $this->settings->initializeHooks($isAdmin);
-            $versionManager->initializeHooks($isAdmin);
+            $this->$versionManager->initializeHooks($isAdmin);
         } else {
-
             $this->snippet->initializeHooks($isAdmin);
         }
-
         $this->isInitialized = true;
     }
 
