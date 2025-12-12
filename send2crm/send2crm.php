@@ -29,13 +29,16 @@
 declare(strict_types=1);
 namespace Send2CRM;
 
+#region Includes
 use Send2CRM\Admin\Settings;
+use Send2CRM\Admin\VersionManager;
 use Send2CRM\Public\Snippet;
+#endregion
 
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 
-// Autoloader
+// Autoloader allows the use of namespaces and use statement (PSR-4)
 require_once plugin_dir_path(__FILE__) . 'Autoloader.php';
 
 
@@ -82,14 +85,6 @@ class Send2CRM {
      */
     public Settings $settings;
 
-
-    /**
-     * A reference to the public facing class that inserts the Send2CRM snippet into the page.
-     * 
-     * @since    1.0.0
-     */
-    public Snippet $snippet;
-
     /**
      * Indicates if the plugin hooks has been initialized so we don't double hook.
      *  
@@ -111,7 +106,8 @@ class Send2CRM {
         $this->menuName = SEND2CRM_MENU_NAME;
         //Register settings,but the hook initialization should only run on Admin area only.
         $this->settings = new Settings($this->slug, $this->menuName);
-        $this->snippet = new Snippet($this->settings, $this->version);
+        $versionManager = new VersionManager($this->settings, $this->version);
+        $snippet = new Snippet($this->settings, $this->version);
 
         error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
 
@@ -127,6 +123,7 @@ class Send2CRM {
         {
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
             $this->settings->initializeHooks($isAdmin);
+            $versionManager->initializeHooks($isAdmin);
         } else {
 
             $this->snippet->initializeHooks($isAdmin);
