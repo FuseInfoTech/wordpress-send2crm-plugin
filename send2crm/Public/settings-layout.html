@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send2CRM Settings - Redesigned</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+            background: #f0f0f1;
+            padding: 20px;
+            color: #1d2327;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            padding: 24px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .header h1 {
+            font-size: 23px;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #646970;
+            font-size: 13px;
+        }
+        
+        .header a {
+            color: #2271b1;
+            text-decoration: none;
+        }
+        
+        .status-bar {
+            background: #fcf9e8;
+            border-bottom: 1px solid #f0e6b4;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #614e00;
+        }
+        
+        .status-bar.complete {
+            background: #d5f2e3;
+            border-bottom: 1px solid #a7d7c5;
+            color: #00664e;
+        }
+        
+        .status-icon {
+            font-size: 20px;
+        }
+        
+        .status-text {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .status-text strong {
+            font-weight: 600;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+        }
+        
+        .tab {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            color: #50575e;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            border-bottom-color: #2271b1;
+            color: #2271b1;
+            font-weight: 600;
+        }
+        
+        .content {
+            padding: 24px;
+        }
+        
+        .section {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #2271b1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .section-icon.complete {
+            background: #00a32a;
+        }
+        
+        .section-title {
+            flex: 1;
+        }
+        
+        .section-title h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .section-title p {
+            font-size: 13px;
+            color: #646970;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.complete {
+            background: #d5f2e3;
+            color: #00664e;
+        }
+        
+        .status-badge.incomplete {
+            background: #fcf0f1;
+            color: #cc1818;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .required-mark {
+            color: #d63638;
+        }
+        
+        .form-help {
+            font-size: 13px;
+            color: #646970;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+        
+        .form-help strong {
+            color: #1d2327;
+        }
+        
+        .help-link {
+            color: #2271b1;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        
+        .help-link:hover {
+            text-decoration: underline;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #8c8f94;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #2271b1;
+            box-shadow: 0 0 0 1px #2271b1;
+        }
+        
+        input[type="text"]:disabled {
+            background: #f6f7f7;
+            color: #a7aaad;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: start;
+        }
+        
+        .input-group input,
+        .input-group select {
+            flex: 1;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #8c8f94;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #2271b1;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #135e96;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #2271b1;
+            border: 1px solid #2271b1;
+        }
+        
+        .btn-secondary:hover {
+            background: #f0f6fc;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .alert-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .alert-warning {
+            background: #fcf9e8;
+            border: 1px solid #f0e6b4;
+            color: #614e00;
+        }
+        
+        .alert-info {
+            background: #e5f5fa;
+            border: 1px solid #b8e6f5;
+            color: #00547a;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        input[type="checkbox"] {
+            margin-top: 3px;
+        }
+        
+        .checkbox-content {
+            flex: 1;
+        }
+        
+        .checkbox-label {
+            font-weight: 600;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .checkbox-description {
+            font-size: 13px;
+            color: #646970;
+            line-height: 1.5;
+        }
+        
+        .footer {
+            padding: 20px 24px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+        }
+        
+        .footer-help {
+            font-size: 13px;
+            color: #646970;
+        }
+        
+        .validation-icon {
+            color: #00a32a;
+            margin-left: 8px;
+            font-size: 16px;
+        }
+        
+        .info-box {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-left: 3px solid #2271b1;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #646970;
+            line-height: 1.5;
+        }
+        
+        .info-box strong {
+            color: #1d2327;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .code-display {
+            background: #f6f7f7;
+            border: 1px solid #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #646970;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Send2CRM Settings</h1>
+        </div>
+        
+      
+        <div class="tabs">
+            <button class="tab active">Setup</button>
+            <button class="tab">Additional Settings</button>
+        </div>
+        
+        <div class="content">
+            <div class="header">
+              <p>Configure the JavaScript library to connect your WordPress site with Salesforce CRM. <a href="#">View Documentation →</a></p>
+            </div>
+            <!-- Required Configuration -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon complete">🔑</div>
+                    <div class="section-title">
+                        <h2>Required Configuration</h2>
+                        <p>API credentials needed for Send2CRM to communicate with Salesforce</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Send2CRM API Key
+                        <span class="required-mark">*</span>
+                        <a href="#" class="help-link">Where do I find this?</a>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="text" value="db943073-68da-dc7a-7a63-e9ce9c66970b" placeholder="Enter your API key">
+                        <span class="validation-icon">✓</span>
+                    </div>
+                    <p class="form-help">
+                        The shared API key configured for your service in Salesforce. This identifies and authenticates requests from your WordPress site to your CRM.
+                    </p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Send2CRM API Domain
+                        <span class="required-mark">*</span>
+                        <a href="#" class="help-link">What should I enter?</a>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="text" value="fuseit-training-dev-ed.develop.my.salesforce-sites.com" placeholder="example: mysite.force.com">
+                        <span class="validation-icon">✓</span>
+                    </div>
+                    <p class="form-help">
+                        The domain where your Send2CRM service is hosted. This is either your public site configured in Salesforce or the scaling service or proxy end point.
+                        <br><strong>Format:</strong> yourdomain.force.com (without https://)
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Version Selection -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">📦</div>
+                    <div class="section-title">
+                        <h2>Library Version & Delivery</h2>
+                        <p>Choose which version of the website Send2CRM client to load and how to deliver it</p>
+                    </div>
+                   </div>
+                
+                <div class="alert alert-info">
+                    <span class="alert-icon">ℹ️</span>
+                    <div>
+                        Your API credentials are configured. Click <strong>"Fetch Versions"</strong> to retrieve available Send2CRM library versions from the CDN.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Version
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="input-group">
+                        <select>
+                            <option>Click "Fetch Versions" to load available versions</option>
+                        </select>
+                        <button class="btn btn-secondary">🔄</button>
+                    </div>
+                    <p class="form-help">
+                        Select which version of the website Send2CRM client to use on your site. After selecting a version and pressing Save, the security verification code below will automatically update with the integrity hash for that version.
+                    </p>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="use-cdn" checked>
+                        <div class="checkbox-content">
+                            <label for="use-cdn" class="checkbox-label">Use Content Delivery Network</label>
+                            <p class="checkbox-description">
+                                <strong>✓ Checked (CDN):</strong> Send2CRM will be loaded into your visitors browser from jsDeliver CDN - faster loading, automatic caching, reduced server load
+                                <br><strong>○ Unchecked (Local):</strong> Downloads and serves a local copy from your WordPress server - use this to comply with strict security requirements
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Verification -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon">🛡️</div>
+                    <div class="section-title">
+                        <h2>Security Verification</h2>
+                        <p>Subresource Integrity (SRI) hash for the selected library version</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        File Verification Code (SHA-384)
+                        <a href="#" class="help-link">What is this?</a>
+                    </label>
+                    <input type="text" disabled placeholder="Select a version above and save to generate hash" value="">
+                    <div class="info-box">
+                        <strong>About SRI verification:</strong>
+                        This is a cryptographic hash specific to the selected version of Send2CRM. It's used for Subresource Integrity (SRI) checks to ensure the JavaScript file hasn't been tampered with. The web browser verifies the file matches this hash before executing it, providing protection against compromised CDN files or man-in-the-middle attacks. This field populates automatically when you select a version and save your settings.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <button class="btn btn-primary">💾 Save Changes</button>
+        </div>
+    </div>
+</body>
+</html>

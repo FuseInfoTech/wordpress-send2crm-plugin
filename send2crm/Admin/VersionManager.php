@@ -54,7 +54,6 @@ class VersionManager {
     private array $releases;
 
 public function __construct(Settings $settings, string $version) {
-        error_log('Starting Version Manager'); //TODO Remove Debug statements
         $this->settings = $settings;
         $this->version = $version;
         $this->githubRepo = GITHUB_REPO;
@@ -65,13 +64,10 @@ public function __construct(Settings $settings, string $version) {
     }
 
     public function initialize_settings() {
-
         $versionTabName = 'default_tab';
 
-        
         //Create section for cookies settings
-
-        $versionSectionName = $this->settings->add_section( //TODO add custom callback for version section
+        $versionSectionName = $this->settings->add_section(
             'version', 
             'Version Configuration', 
             'Select your Send2CRM.js version a local copy or the Content Delivery Network version will be used for your site.'
@@ -111,7 +107,7 @@ public function __construct(Settings $settings, string $version) {
     public function initializeHooks(bool $isAdmin): void {
         if ($isAdmin) {
             //Hook on admin page to add javascript
-            add_action('admin_enqueue_scripts', array($this,'insertVersionManagerJs'));
+            add_action('admin_enqueue_scripts', array($this,'insert_version_manager_scripts'));
             //Hook on ajax call to retrieve send2crm releases
             add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
             add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
@@ -136,14 +132,14 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<select id='$fieldId' name='$settingName' data-current-version='$value'>";
+        echo "<select id='".esc_attr($fieldId)."' name='".esc_attr($settingName)."' data-current-version='".esc_attr($value)."'>";
         echo "<option value='' selected>No releases found. Click the Refresh button to fetch releases.</option>";
         echo "</select>";
         echo "<button id='fetch-releases' class='button button-primary'><span id='fetch-icon' style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>$description</p>";
+        echo "<p class='description'>".esc_html($description)."</p>";
     }
 
     /**
@@ -154,7 +150,6 @@ public function __construct(Settings $settings, string $version) {
      */
     public function render_hash_input(array $arguments): void {
         $fieldId = $arguments['id'];
-        error_log($fieldId);
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
@@ -162,11 +157,11 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input class='regular-text' placeholder='Please select a version and save changes to populate hash.' readonly type='text' id='$fieldId' name='$settingName' value='$value'>";
+        echo "<input class='regular-text' placeholder='Please select a version and save changes to populate hash.' readonly type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>$description</p>";
+        echo "<p class='description'>".esc_html($description)."</p>";
     }
 
     /**
@@ -177,7 +172,6 @@ public function __construct(Settings $settings, string $version) {
      */
     public function render_cdn_input(array $arguments): void {
         $fieldId = $arguments['id'];
-        error_log($fieldId);
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
@@ -186,11 +180,11 @@ public function __construct(Settings $settings, string $version) {
         $description = $fieldDetails['description'];
         // Render the input field 
         $checked = checked($value, 1, false);
-        echo "<input type='checkbox' id='$fieldId' name='$settingName' value='1' $checked>";
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='1' " . esc_html($checked) . ">";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>$description</p>";
+        echo "<p class='description'>".esc_html($description)."</p>";
     }
 
     /**
@@ -231,7 +225,6 @@ public function __construct(Settings $settings, string $version) {
         }
 
         if ($updateHash) {
-            error_log("Updating Send2CRM CDN from {$currentUseCDN} to {$useCDN}");
             $newHash = $this->getHash(SEND2CRM_CDN . "@{$newVersion}/");
             if (empty($newHash)) {
                 add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );
@@ -307,14 +300,11 @@ public function __construct(Settings $settings, string $version) {
     }
 
     /**
-     * Get the hash of the Send2CRM JS file at the provided location.
-     * This hash should be provided with each release of Send2CRM and is
-     * used for performing Subresource Integrity checks.
+     * Add the Send2CRM JS version manager script to the admin page.
      * 
      * @since 1.0.0
      */
-    public function insertVersionManagerJs() {
-        error_log('Inserting Version Manager JS'); //TODO Remove Debug statements
+    public function insert_version_manager_scripts() {
         
         $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . VERSION_MANAGER_FILENAME;
         $versionManagerJsPath = plugin_dir_path( __FILE__ ) . VERSION_MANAGER_FILENAME;
@@ -323,7 +313,7 @@ public function __construct(Settings $settings, string $version) {
 
         if (wp_register_script( $versionManagerJSId, $versionManagerJSUrl, array('jquery'), $versionManagerJSVersion, false ) === false) 
         {
-            error_log('Snippet could not be registered - Send2CRM will not be activated.');
+            add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to register Send2CRM version manager script.", 'error' );
             return;
         }
         
@@ -356,7 +346,7 @@ public function __construct(Settings $settings, string $version) {
      * @return string the content of the hash file or an empty string if the file does not exist
      */
     private function getHash(string $location): string {
-        error_log('Get hash from '. $location . SEND2CRM_HASH_FILENAME); //TODO Add checks for bad paths to prevent critical erros
+        //TODO Add checks for bad paths to prevent critical errors
         $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
         if (!$hash) {
             return '';
@@ -394,7 +384,7 @@ public function __construct(Settings $settings, string $version) {
             wp_send_json_error('Insufficient permissions');
         }
         
-        $tag_name = isset($_POST['tag_name']) ? sanitize_text_field($_POST['tag_name']) : '';
+        $tag_name = isset($_POST['tag_name']) ? sanitize_text_field(wp_unslash($_POST['tag_name'])) : '';
         
         if (empty($tag_name)) {
             wp_send_json_error('Missing tag name');

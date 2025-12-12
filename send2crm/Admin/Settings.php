@@ -75,7 +75,6 @@ class Settings {
      */
     public function __construct(string $pluginSlug, string $menuName)
     {
-        error_log('Init Send2CRM Settings'); //TODO Remove Debug statements
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
         //TODO Check if we still need $menuName
@@ -93,9 +92,7 @@ class Settings {
      */
     public function initializeHooks(bool $isAdmin): void
     {
-        error_log('Add Settings Hooks'); //TODO Remove Debug statements
         if ($isAdmin) {
-            error_log('Initializing Settings Hooks for Admin Page');
             // Hook into admin_init 
             add_action('admin_init', array($this,'initializeSettings'));
             // Hook into admin_menu to add our page 
@@ -112,9 +109,7 @@ class Settings {
      * 
      */
     public function initializeSettings(): void {
-        error_log('Creating Send2CRM Settings');
         // Register the setting
-        //TODO make the settings use an array to avoid pollution the wp_options table with many settings
         foreach ($this->groups as $groupName => $groupDetails) {
             $registerSettingParameters = array(
                 //type and description ignored unless 'show_in_rest' => true so technically you can submit anything to options.php and wordpress will accept it but I've included it for clarity. 
@@ -129,7 +124,6 @@ class Settings {
 
 
         foreach ($this->sections as $sectionName => $sectionDetails) {
-            error_log('Add Setting Section: ' . $sectionName . ' - ' . $sectionDetails['label']); //TODO Remove Debug statements
             add_settings_section(
                 $sectionName,
                 $sectionDetails['label'],
@@ -139,8 +133,6 @@ class Settings {
         }
 
         foreach ($this->fields as $fieldName => $fieldDetails) {
-            error_log('Add Setting Field: ' . $fieldName . ' - ' . serialize($fieldDetails)); //TODO Remove Debug statements
-            
             $callbackArgs = array(
                 'id' => $fieldName,
                 'label_for' => $fieldName,
@@ -163,7 +155,6 @@ class Settings {
      */
     public function setupSettingsMenu() 
     {
-        error_log("Adding {$this->menuName} Menu");
         // Add a new menu page 
         add_options_page( "{$this->menuName} Settings", // Page title 
             $this->menuName, // Menu title 
@@ -190,37 +181,63 @@ class Settings {
 
         // Add error/update messages
         // check if the user have submitted the settings. Wordpress will add the "settings-updated" $_GET parameter to the url
-        if (isset($_GET['settings-updated']))
-        {
-            // Add settings saved message with the class of "updated"
-            add_settings_error($this->pluginSlug, $this->pluginSlug . '-message', 'Settings saved.', 'success');
-        }
-        error_log('Displaying Setting Page from Callback'); //TODO Remove Debug statements
         ?>
+
         <div class="wrap"> 
-            <h1><?php esc_html_e("{$this->menuName} Settings", $this->pluginSlug); ?></h1> 
-            <p>Additional Settings should be left empty unless you require changes from the default settings. For more information on Send2CRM configuration please visit <a target="_blank" href=<?php echo DOCS_URL; ?>>Javascript Client Documentation</a>.</p> 
-            <?php $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'default_tab'; ?>
-            <h2 class="nav-tab-wrapper">
-                <?php foreach ($this->groups as $groupName => $groupDetails) { ?> 
-                    <a href="?page=<?php echo $this->menuSlug; ?>&tab=<?php echo $groupDetails['tab_name']; ?>" class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>"><?php esc_html_e($groupDetails['tab_title'], $this->pluginSlug); ?></a>
-                <?php } ?> 
-            </h2>
-            <form method="post" action="options.php"> 
-                <?php
-                    foreach ($this->groups as $groupName => $groupDetails) { 
-                        if ($activeTab === $groupDetails['tab_name']) {
-                            // Output security fields 
-                            settings_fields($groupName); 
-                            // Output sections and fields 
-                            do_settings_sections( $groupDetails['tab_name'] );
-                        }
+        <h1><?php echo esc_html("{$this->menuName} Settings"); ?></h1> 
+        <p>Additional Settings should be left empty unless you require changes from the default settings. For more information on Send2CRM configuration please visit <a target="_blank" href="<?php echo esc_url(DOCS_URL); ?>">Javascript Client Documentation</a>.</p> 
+        
+        <?php 
+        // Determine active tab with nonce verification
+        $activeTab = array_key_first($this->groups) ? $this->groups[array_key_first($this->groups)]['tab_name'] : 'default_tab';
+        
+        if (isset($_GET['tab']) && isset($_GET['_wpnonce'])) {
+            $tab = sanitize_text_field(wp_unslash($_GET['tab']));
+            $nonce = sanitize_text_field(wp_unslash($_GET['_wpnonce']));
+            
+            if (wp_verify_nonce($nonce, 'switch_tab_' . $tab)) {
+                // Whitelist allowed tabs
+                $allowed_tabs = array_column($this->groups, 'tab_name');
+                if (in_array($tab, $allowed_tabs, true)) {
+                    $activeTab = $tab;
+                }
+            }
+        }
+        ?>
+        
+        <h2 class="nav-tab-wrapper">
+            <?php foreach ($this->groups as $groupName => $groupDetails) { 
+                $tab_url = add_query_arg(
+                    array(
+                        'page' => $this->menuSlug,
+                        'tab' => $groupDetails['tab_name'],
+                        '_wpnonce' => wp_create_nonce('switch_tab_' . $groupDetails['tab_name'])
+                    ),
+                    admin_url('admin.php')
+                );
+                ?>
+                <a href="<?php echo esc_url($tab_url); ?>" 
+                   class="nav-tab <?php echo $activeTab === $groupDetails['tab_name'] ? 'nav-tab-active' : ''; ?>">
+                    <?php echo esc_html($groupDetails['tab_title']); ?>
+                </a>
+            <?php } ?> 
+        </h2>
+        
+        <form method="post" action="options.php"> 
+            <?php
+                foreach ($this->groups as $groupName => $groupDetails) { 
+                    if ($activeTab === $groupDetails['tab_name']) {
+                        // Output security fields 
+                        settings_fields($groupName); 
+                        // Output sections and fields 
+                        do_settings_sections($groupDetails['tab_name']);
                     }
-                    // Output save button 
-                    submit_button(); 
-                ?> 
-            </form> 
-        </div> 
+                }
+                // Output save button 
+                submit_button(); 
+            ?> 
+        </form> 
+    </div>  
         <?php 
     }
 
@@ -241,7 +258,7 @@ class Settings {
         if (empty($description)) {
             return;
         }
-        echo "<p>$description</p>";
+        echo "<p>".esc_html($description)."</p>";
     }
     #endregion
 
@@ -283,19 +300,15 @@ class Settings {
      * @return  string  The value of the setting if found, otherwise an empty string.
      */
     public function getSetting(string $key, string | null $groupName = null, string $default = ''): string {
-        error_log('Get Setting: ' . $key);
         if (is_null($groupName)) {
             $fieldDetails = $this->fields[$key] ?? null;
             if (is_null($fieldDetails)) {
-                error_log( "Field {$key} not found returning '{$default}'" );
                 return $default;
             }
             $groupName = $fieldDetails['option_group'] ?? $this->get_option_group_name('settings');
         }    
         $array = get_option($this->groups[$groupName]['option_name'], array()); //TODO fix null values
-        error_log('Value returned: ' . serialize($array));
         $value = $array[$key] ?? $default;
-        error_log('returning: ' . $value );
         return $value;
     }
 
@@ -307,12 +320,11 @@ class Settings {
      * @param   string  $value      The new value of the setting.
      * @param   string  $groupName  The name of the option group used to find the setting.
      */
-    public function update_setting(string $key, string $value, string | null $groupName = null ): void {
+    public function update_setting(string $key, string $value, string | null $groupName = null ): void { //TODO add success or fail as return type
         //escape the value before updating
         if (is_null($groupName)) {
             $fieldDetails = $this->fields[$key] ?? null;
             if (is_null($fieldDetails)) {
-                error_log( "Field {$key} not found." );
                 return;
             }
             $groupName = $fieldDetails['option_group'] ?? $this->get_option_group_name('settings');
@@ -321,7 +333,6 @@ class Settings {
         $optionName = $this->groups[$groupName]['option_name'];
         $array = get_option($optionName, array());
         $array[$key] = $value;
-        error_log("Update Setting: {$optionName}[{$key}] with value: {$value}");
         update_option($optionName, $array);
     }
 
@@ -335,7 +346,6 @@ class Settings {
      */
     public function getSettingName(string $key, string $groupName): string {
         $settingName = "{$this->groups[$groupName]['option_name']}[{$key}]";
-        error_log('Get Setting Name: ' . $settingName);
         return $settingName;    
     }
 
@@ -446,7 +456,6 @@ class Settings {
             'option_group' => $this->get_option_group_name($groupName),
             'description' => $description
         );
-        error_log('Field added: ' . serialize($this->fields[$fieldName])); //TODO Remove debug Statements
     }
 
     /**

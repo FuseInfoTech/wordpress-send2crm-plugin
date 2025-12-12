@@ -43,9 +43,9 @@ class Snippet {
 
 
     public function __construct(Settings $settings, string $version) {
-        error_log('Initializing Public facing Send2CRM Plugin'); //TODO Remove Debug statements
         $this->settings = $settings;
         $this->version = $version;
+
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
 
@@ -402,10 +402,8 @@ class Snippet {
     public function initializeHooks(bool $isAdmin): void
     {
         if ($isAdmin) {
-            error_log('Skipping Snippet Hooks for Admin Page'); //TODO Remove Debug statements;
             return;
         }
-        error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
         add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
         add_action('wp_enqueue_scripts',array($this,'applyAdditionalSettings'));
@@ -422,7 +420,6 @@ class Snippet {
      * @return  array   An array of sanitized and validated settings.
      */ 
     public function sanitize_and_validate_settings(array | null $settings) : array {
-        error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
         //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
         $input = $settings ?? array();
         $sanitizedOutput = array();
@@ -444,7 +441,6 @@ class Snippet {
      */
     public function render_text_input(array $arguments): void {
         $fieldId = $arguments['id'];
-        error_log($fieldId);
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
@@ -452,11 +448,11 @@ class Snippet {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        echo "<input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>$description</p>";
+        echo "<p class='description'>" . esc_html($description) ."</p>";
     }
     #endregion
 
@@ -469,8 +465,6 @@ class Snippet {
      * @since   1.0.0
      */
     public function insertSnippet() {
-        error_log('Inserting Send2CRM Snippet');
-
         $apiKey = $this->settings->getSetting('api_key');
         $apiDomain = $this->settings->getSetting('api_domain');
         $jsVersion = $this->settings->getSetting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
@@ -485,7 +479,6 @@ class Snippet {
             || empty($apiDomain)
             || empty($jsVersion)) 
         {
-            error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
@@ -496,7 +489,7 @@ class Snippet {
         
         if (wp_register_script( $snippetId, $snippetUrl, array(), $snippetVersion, false ) === false)
         {
-            error_log('Snippet could not be registered - Send2CRM will not be activated.');
+            add_settings_error( $snippetId, esc_attr( 'settings-updated'), 'Snippet could not be registered - Send2CRM will not be activated.' , 'error' );
             return;
         } 
         
@@ -507,7 +500,6 @@ class Snippet {
             'hash' => $jsHash
         ));
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
-        error_log('Snippet enqueued at' . $snippetUrl);
         wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
     }
 
@@ -517,15 +509,13 @@ class Snippet {
      * @since   1.0.0
      */
     public function applyAdditionalSettings() {
-        error_log('Apply Additional Settings');
-
         $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
         $settingJsPath = plugin_dir_path( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
         $settingJsId = "{$this->settings->pluginSlug}-settings";
         $settingJSVersion = file_exists($settingJsPath) ? filemtime($settingJsPath) : $this->version;
         if (wp_register_script( $settingJsId, $settingJsUrl, array(), $settingJSVersion, false ) === false)
         {
-            error_log('Additional Settings Javascript could not be registered - No Additional Settings will be applied.');
+            add_settings_error( $settingJsId, esc_attr( 'settings_updated' ) , "Additional Settings Javascript could not be registered - No Additional Settings will be applied.", 'error' );
             return;
         }
 
@@ -559,7 +549,6 @@ class Snippet {
         $this->addSettingIfNotEmpty($servicePathsArray,'visitorPath','visitor_path');
 
         wp_enqueue_script($settingJsId, $settingJsUrl, array(), $this->version, false);
-        error_log('Additional Settings Javascript enqueued at' . $settingJsUrl);
         $settingsJson = json_encode($settingsArray);
         $servicePathsJson = json_encode($servicePathsArray);
         $passArraysToJs = "const servicePaths = {$servicePathsJson};const additionalSettings = {$settingsJson};";
