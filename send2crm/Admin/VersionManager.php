@@ -285,8 +285,9 @@ public function __construct(Settings $settings, string $version) {
     public function remove_release_files($version) : bool {
         $upload_dir = wp_upload_dir();
         $success = false;
+        //TODO 
         if (file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME)) {
-            $success = unlink($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
+            $success = wp_delete_file($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
         }
         return $success;
     }
@@ -316,9 +317,11 @@ public function __construct(Settings $settings, string $version) {
         error_log('Inserting Version Manager JS'); //TODO Remove Debug statements
         
         $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . VERSION_MANAGER_FILENAME;
-        $versionManagerJSId = "{$this->settings->pluginSlug}-version-manager-js";
-    
-        if (wp_register_script( $versionManagerJSId, $versionManagerJSUrl, array('jquery'), $this->version, false ) === false) 
+        $versionManagerJsPath = plugin_dir_path( __FILE__ ) . VERSION_MANAGER_FILENAME;
+        $versionManagerJSId = "{$this->settings->pluginSlug}-version-manager";
+        $versionManagerJSVersion = file_exists($versionManagerJsPath) ? filemtime($versionManagerJsPath) : $this->version;
+
+        if (wp_register_script( $versionManagerJSId, $versionManagerJSUrl, array('jquery'), $versionManagerJSVersion, false ) === false) 
         {
             error_log('Snippet could not be registered - Send2CRM will not be activated.');
             return;

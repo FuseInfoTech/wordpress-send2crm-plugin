@@ -12,12 +12,6 @@ if (!defined('ABSPATH')) exit;
 #region Constants
 define('JS_FOLDERNAME', 'js/');
 define('SNIPPET_FILENAME', JS_FOLDERNAME . 'sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
-//define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
-//define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
-//define('GITHUB_USERNAME', 'FuseInfoTech');
-//define('GITHUB_REPO', 'send2crmjs');
-//define('CDN_URL', 'https://cdn.jsdelivr.net');
-//define('SEND2CRM_CDN', CDN_URL .'/gh/'. GITHUB_USERNAME . '/' . GITHUB_REPO);
 define('ADDITIONAL_SETTINGS_FILENAME', 'js/additional-settings.js');
 #endregion
 /**
@@ -485,7 +479,7 @@ class Snippet {
 
         $upload_dir = wp_upload_dir();
         
-        $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . "/{$jsVersion}/";
+        $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . "{$jsVersion}/";
 
         if (empty($apiKey) 
             || empty($apiDomain)
@@ -495,9 +489,12 @@ class Snippet {
             return;
         }
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
+        $snippetPath = plugin_dir_path( __FILE__ ) . SNIPPET_FILENAME;
+        $snippetVersion = file_exists($snippetPath) ? filemtime($snippetPath) : $this->version;
         $snippetId = "{$this->settings->pluginSlug}-snippet";
+
         
-        if (wp_register_script( $snippetId, $snippetUrl, array(), $this->version, false ) === false)
+        if (wp_register_script( $snippetId, $snippetUrl, array(), $snippetVersion, false ) === false)
         {
             error_log('Snippet could not be registered - Send2CRM will not be activated.');
             return;
@@ -523,8 +520,10 @@ class Snippet {
         error_log('Apply Additional Settings');
 
         $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
+        $settingJsPath = plugin_dir_path( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
         $settingJsId = "{$this->settings->pluginSlug}-settings";
-        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $this->version, false ) === false)
+        $settingJSVersion = file_exists($settingJsPath) ? filemtime($settingJsPath) : $this->version;
+        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $settingJSVersion, false ) === false)
         {
             error_log('Additional Settings Javascript could not be registered - No Additional Settings will be applied.');
             return;
