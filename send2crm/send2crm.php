@@ -13,7 +13,7 @@
  * @link      https://fuseit.com
  * 
  * Plugin Name: Send2CRM
- * Plugin URI:      https://www.fuseit.com/products/sales-accelerators/send2crm-for-salesforce/
+ * Plugin URI:      https://github.com/FuseInfoTech/wordpress-send2crm-plugin/
  * Description:     Send2CRM is the official WordPress plugin for the Send2CRM service by FuseIT to seamlessly connect all your websites with your CRM.
  * Version: 1.0.0
  * Author: FuseIT

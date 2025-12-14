@@ -1,6 +1,6 @@
 === Send2CRM ===
 Contributors: christylernz
-Tags: Send2CRM, Salesforce, Analytics,CRM, Sales
+Tags: Send2CRM, Salesforce, Analytics, CRM, Sales
 Requires at least: 6.5.7
 Tested up to: 6.9
 Stable tag: 1.0.0

@@ -77,7 +77,6 @@ class Settings {
     {
         $this->pluginSlug = $pluginSlug;
         $this->menuSlug = $pluginSlug;
-        //TODO Check if we still need $menuName
         $this->menuName = $menuName;
         $this->fields = array();
         $this->sections = array();
