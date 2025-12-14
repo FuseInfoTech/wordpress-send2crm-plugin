@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 
 #region Constants
 define('JS_FOLDERNAME', 'js/');
-define('SNIPPET_FILENAME', JS_FOLDERNAME . 'send2crm-setup.js'); //TODO Fix this so it is either called a path or actually references a filename
+define('SNIPPET_FILENAME', JS_FOLDERNAME . 'send2crm-setup.js');
 define('ADDITIONAL_SETTINGS_FILENAME', 'js/additional-settings.js');
 #endregion
 /**
