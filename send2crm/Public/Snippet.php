@@ -58,14 +58,14 @@ class Snippet {
             'api_key',
             'Send2CRM API Key<span style="color: #d63638;">*</span>',
             array($this, 'render_required_text_input'),
-            'Enter the shared API key configured for your service in Salesforce.'
+            'The shared API key configured for your service in Salesforce. This identifies and authenticates requests from your WordPress site to your CRM.<br/><a href="https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2203746325/Client+Configuration" target="_blank">Where do I find this?</a>'
         );
 
         $this->settings->add_field(
             'api_domain',
             'Send2CRM API Domain<span style="color: #d63638;">*</span>',
             array($this, 'render_required_text_input'),
-            'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.'
+            'The domain where your Send2CRM service is hosted. This is either your public site configured in Salesforce or the scaling service or proxy end point.<br/><strong>Format:</strong> yourdomain.force.com (without https://)<br/><a href="https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2203746325/Client+Configuration">What should I enter?</a>'
         );
 
         //Create additional settings groups and sections
@@ -452,7 +452,7 @@ class Snippet {
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>" . esc_html($description) ."</p>";
+        echo "<p class='description'>" . wp_kses_post($description) ."</p>";
     }
 
     /**
@@ -475,7 +475,7 @@ class Snippet {
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>" . esc_html($description) ."</p>";
+        echo "<p class='description'>" . wp_kses_post($description) ."</p>";
     }
     #endregion
 
