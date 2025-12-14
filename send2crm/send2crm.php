@@ -121,8 +121,8 @@ class Send2CRM {
         
         //Register settings,but the hook initialization should only run on Admin area only.
         $this->settings = new Settings($this->slug, $this->menuName);
-        $this->versionManager = new VersionManager($this->settings, $this->version);
         $this->snippet = new Snippet($this->settings, $this->version);
+        $this->versionManager = new VersionManager($this->settings, $this->version);
         if ($this->isInitialized) return;
         $this->initialize_hooks();
     }

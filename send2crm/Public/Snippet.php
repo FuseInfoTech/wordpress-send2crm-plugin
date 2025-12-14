@@ -51,20 +51,20 @@ class Snippet {
 
         $this->settings->add_section(
             'settings', 
-            'Required Settings', 
-            'The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.'
+            'Required Configuration', 
+            'API credentials needed for Send2CRM to communicate with Salesforce. Send2CRM will not be activateduntil they are added.'
         );
         $this->settings->add_field(
             'api_key',
-            'Send2CRM API Key',
-            array($this, 'render_text_input'),
+            'Send2CRM API Key<span style="color: #d63638;">*</span>',
+            array($this, 'render_required_text_input'),
             'Enter the shared API key configured for your service in Salesforce.'
         );
 
         $this->settings->add_field(
             'api_domain',
-            'Send2CRM API Domain',
-            array($this, 'render_text_input'),
+            'Send2CRM API Domain<span style="color: #d63638;">*</span>',
+            array($this, 'render_required_text_input'),
             'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.'
         );
 
@@ -449,6 +449,29 @@ class Snippet {
         $description = $fieldDetails['description'];
         // Render the input field 
         echo "<input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>" . esc_html($description) ."</p>";
+    }
+
+    /**
+     * Callback for displaying the text input field.
+     * 
+     * @since   1.0.0
+     * @param   string  $fieldId        The ID of the field.
+     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
+     */
+    public function render_required_text_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        echo "<input required type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
         if (empty($description)) {
             return;
         }

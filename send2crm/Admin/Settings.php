@@ -184,8 +184,7 @@ class Settings {
 
         <div class="wrap"> 
         <h1><?php echo esc_html("{$this->menuName} Settings"); ?></h1> 
-        <p>Additional Settings should be left empty unless you require changes from the default settings. For more information on Send2CRM configuration please visit <a target="_blank" href="<?php echo esc_url(DOCS_URL); ?>">Javascript Client Documentation</a>.</p> 
-        
+
         <?php 
         // Determine active tab with nonce verification
         $activeTab = array_key_first($this->groups) ? $this->groups[array_key_first($this->groups)]['tab_name'] : 'default_tab';
@@ -221,6 +220,8 @@ class Settings {
                 </a>
             <?php } ?> 
         </h2>
+
+        <p id="settings-description">Configure the JavaScript library to connect your WordPress site with Salesforce CRM. <a href="#">View Documentation →</a></p>
         
         <form method="post" action="options.php"> 
             <?php

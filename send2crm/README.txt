@@ -1,5 +1,5 @@
 === Send2CRM ===
-Contributors: christylernz
+Contributors: fuseit
 Tags: Send2CRM, Salesforce, Analytics, CRM, Sales
 Requires at least: 6.5.7
 Tested up to: 6.9
@@ -36,7 +36,7 @@ Key Benefits:
 # Prerequisites:
 A Salesforce org with Send2CRM already installed from the [Salesforce AppExchange](https://appexchange.salesforce.com/appxListingDetail?listingId=95b16078-064f-4006-ad72-6b564c4e2079).
  
-Installation instructions:
+# Installation instructions:
 1. Install via the WordPress plugin installer or upload the ZIP file
 2. Retrieve API key and domain from Send2CRM app in Salesforce
 3. Enter API key and domain in the settings: WordPress console -> Settings -> Send2CRM
