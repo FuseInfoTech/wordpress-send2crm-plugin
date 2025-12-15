@@ -1,6 +1,8 @@
+# Send2CRM WordPress Plugin
+
 Easily integrate your WordPress site with your CRM through FuseIT’s official Send2CRM Wordpress plugin.  
  
-== Description ==
+## Description
 
 Send2CRM by FuseIT seamlessly integrates your WordPress site with Salesforce CRM. Capture leads, automatically sync form data to Salesforce, leverage automation and AI-powered insights, real-time customer activity, and dynamic website personalization all from within Salesforce to boost conversion rates and shorten your sales cycle.
 
@@ -20,13 +22,13 @@ Key Benefits:
 * Reliable, secure, and fully aligned with your existing Salesforce setup
  
 
-== Installation ==
+## Installation
  
 
-# Prerequisites:
+### Prerequisites:
 A Salesforce org with Send2CRM already installed from the [Salesforce AppExchange](https://appexchange.salesforce.com/appxListingDetail?listingId=95b16078-064f-4006-ad72-6b564c4e2079).
  
-# Installation instructions:
+### Installation instructions:
 1. Install via the WordPress plugin installer or upload the ZIP file
 2. Retrieve API key and domain from Send2CRM app in Salesforce
 3. Enter API key and domain in the settings: WordPress console -> Settings -> Send2CRM
