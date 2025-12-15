@@ -63,22 +63,70 @@ function send2crm_delete_releases() : void
     remove_folder($releases_dir);
     
 }
-
 /**
- * Delete the plugin folder.
+ * Delete a directory and all of its contents using WordPress Filesystem API.
  *
  * @since    1.0.0
  * 
- * @param    string    $dir    The plugin directory.
- * @return   bool    True on success, otherwise false.
+ * @param    string    $dir    The plugin directory or upload subdirectory path.
+ * @return   bool      True on success, false on failure.
  */
 function remove_folder( $dir ) : bool {
+    // Safety check: Ensure we have a valid directory path
+    if ( empty( $dir ) || ! is_string( $dir ) ) {
+        return false;
+    }
+
+    // Normalize the path
+    $dir = untrailingslashit( $dir );
+    
+    // CRITICAL SAFETY CHECKS - Prevent accidental deletion of WordPress core directories
+    $wp_upload_dir = wp_upload_dir();
+    $upload_basedir = untrailingslashit( $wp_upload_dir['basedir'] );
+    
+    $protected_paths = array(
+        ABSPATH,                           // WordPress root
+        WP_CONTENT_DIR,                    // wp-content directory
+        WP_PLUGIN_DIR,                     // plugins directory
+        get_theme_root(),                  // themes directory
+        $upload_basedir,                   // uploads BASE directory (root)
+        ABSPATH . 'wp-admin',              // wp-admin directory
+        ABSPATH . 'wp-includes',           // wp-includes directory
+    );
+
+    // Check if trying to delete a protected directory
+    foreach ( $protected_paths as $protected ) {
+        $protected = untrailingslashit( $protected );
+        if ( $dir === $protected ) {
+            return false;
+        }
+    }
+
+    // Verify the path is within WP_PLUGIN_DIR OR a subdirectory of uploads
+    $plugin_dir = untrailingslashit( WP_PLUGIN_DIR );
+    $is_in_plugin_dir = ( strpos( $dir, $plugin_dir ) === 0 );
+    $is_in_uploads_subdir = ( strpos( $dir, $upload_basedir ) === 0 && $dir !== $upload_basedir );
+    
+    if ( ! $is_in_plugin_dir && ! $is_in_uploads_subdir ) {
+        return false;
+    }
+
+    // Check if directory exists
     if ( ! is_dir( $dir ) ) {
-        return;
+        return false;
     }
-    $files = array_diff( scandir( $dir ), array( '.', '..' ) );
-    foreach ( $files as $file ) {
-        ( is_dir( "$dir/$file" ) ) ? delete_plugin_folder( "$dir/$file" ) : unlink( "$dir/$file" );
+
+    // Initialize WordPress filesystem
+    global $wp_filesystem;
+    
+    if ( ! function_exists( 'WP_Filesystem' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
     }
-    return rmdir( $dir );
+    
+    if ( ! WP_Filesystem() ) {
+        return false;
+    }
+
+    // Use WordPress Filesystem API to remove directory recursively
+    return $wp_filesystem->rmdir( $dir, true );
 }
