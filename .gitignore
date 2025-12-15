@@ -32,6 +32,9 @@ wp-config.php
 # Log files
 *.log
 
+# Archives
+*.zip
+
 # htaccess
 /.htaccess
 
