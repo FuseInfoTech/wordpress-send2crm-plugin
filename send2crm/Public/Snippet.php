@@ -52,7 +52,7 @@ class Snippet {
         $this->settings->add_section(
             'settings', 
             'Required Configuration', 
-            'API credentials needed for Send2CRM to communicate with Salesforce. Send2CRM will not be activateduntil they are added.'
+            'API credentials needed for Send2CRM to communicate with Salesforce.'
         );
         $this->settings->add_field(
             'api_key',

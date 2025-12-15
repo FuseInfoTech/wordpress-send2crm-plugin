@@ -69,33 +69,41 @@ public function __construct(Settings $settings, string $version) {
         //Create section for cookies settings
         $versionSectionName = $this->settings->add_section(
             'version', 
-            'Version Configuration', 
-            'Select your Send2CRM.js version a local copy or the Content Delivery Network version will be used for your site.'
+            'Library Version & Delivery', 
+            'Choose which version of the website Send2CRM client to load and how to deliver it.'
         );
 
         $this->settings->add_field(
             'js_version',
-            'Version', 
+            'Version<span style="color: #d63638;">*</span>', 
             array($this, 'render_version_input'), 
-            "Select which version of Send2CRM.js to use. If 'Use CDN?' is not checked, a local copy of the javascript will be fetched from the CDN. Select a version to update this field.", 
+            "Select which version of the website Send2CRM client to use on your site. After selecting a version and pressing Save, the security verification code below will automatically update with the integrity hash for that version.", 
             $versionSectionName
+        );
+
+        $this->settings->add_field(
+            'use_cdn',
+            'Delivery Method', 
+            array($this, 'render_cdn_input'), 
+            "<strong>✓ Checked (CDN):</strong> Send2CRM will be loaded into your visitors browser from jsDeliver CDN - faster loading, automatic caching, reduced server load <br/><strong>○ Unchecked (Local):</strong> Downloads and serves a local copy from your WordPress server - use this to comply with strict security requirements.", 
+            $versionSectionName
+        );
+
+        $verificationSectionName = $this->settings->add_section(
+            'security-verification',
+            'Security Verification', 
+            'Subresource Integrity (SRI) hash for the selected library version.'
         );
 
         $this->settings->add_field(
             'js_hash',
             'File Verification Code', 
             array($this, 'render_hash_input'), 
-            "A unique code to confirm the expected Send2CRM.js file loads on your site. Choose a version above to update this field automatically.", 
-            $versionSectionName, 
+            "<a href='https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity' target='_blank'>What is this?</a><br/>This is a cryptographic hash specific to the selected version of Send2CRM. It's used for Subresource Integrity (SRI) checks to ensure the JavaScript file hasn't been tampered with. The web browser verifies the file matches this hash before executing it, providing protection against compromised CDN files or man-in-the-middle attacks. This field populates automatically when you select a version and save your settings.", 
+            $verificationSectionName, 
         );
 
-        $this->settings->add_field(
-            'use_cdn',
-            'Use CDN?', 
-            array($this, 'render_cdn_input'), 
-            "If checked, public facing pages will use JsDeliver CDN for Send2CRM.js. Otherwise, fetch a local copy of Send2CRM.js and reference that.", 
-            $versionSectionName
-        );
+
     }
 
     /**
@@ -132,8 +140,8 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<select id='".esc_attr($fieldId)."' name='".esc_attr($settingName)."' data-current-version='".esc_attr($value)."'>";
-        echo "<option value='' selected>No releases found. Click the Refresh button to fetch releases.</option>";
+        echo "<select required id='".esc_attr($fieldId)."' name='".esc_attr($settingName)."' data-current-version='".esc_attr($value)."'>";
+        echo "<option value='' selected>Click 'Fetch Versions' to load available versions</option>";
         echo "</select>";
         echo "<button id='fetch-releases' class='button button-primary'><span id='fetch-icon' style='vertical-align: sub;' class='dashicons dashicons-update'></span></button>";
         if (empty($description)) {
@@ -157,11 +165,11 @@ public function __construct(Settings $settings, string $version) {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input class='regular-text' placeholder='Please select a version and save changes to populate hash.' readonly type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
+        echo "<input class='large-text' placeholder='Select a version above and save changes to generate hash' readonly type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>".esc_html($description)."</p>";
+        echo "<p class='description'>".wp_kses_post($description)."</p>";
     }
 
     /**
@@ -180,11 +188,11 @@ public function __construct(Settings $settings, string $version) {
         $description = $fieldDetails['description'];
         // Render the input field 
         $checked = checked($value, 1, false);
-        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='1' " . esc_html($checked) . ">";
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='1' " . esc_html($checked) . "> Use Content Delivery Network";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>".esc_html($description)."</p>";
+        echo "<p class='description'>". wp_kses_post($description). "</p>";
     }
 
     /**

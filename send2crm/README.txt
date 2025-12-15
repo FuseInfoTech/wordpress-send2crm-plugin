@@ -12,7 +12,7 @@ Easily integrate your WordPress site with your CRM through FuseIT’s official S
  
 == Description ==
 
-Send2CRM by FuseIT seamlessly connects all your websites with your CRM. Leverage automation & AI, real-time customer insights, and dynamic website personalization all from within Salesforce to boost your sales conversion rates and shorten your sales cycle. This plugin integrates these features into your Wordpress website.            
+Send2CRM by FuseIT seamlessly integrates your WordPress site with Salesforce CRM. Capture leads, automatically sync form data to Salesforce, leverage automation and AI-powered insights, real-time customer activity, and dynamic website personalization all from within Salesforce to boost conversion rates and shorten your sales cycle.
 
 **The advantages of Send2CRM in WordPress**
 Turn website activity into sales-ready insights, right inside Salesforce. Send2CRM connects your WordPress site directly to your CRM, giving your team the context they need to personalize outreach and close deals faster.
