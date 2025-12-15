@@ -31,6 +31,7 @@ if (!defined('WP_UNINSTALL_PLUGIN'))
     exit;
 }
 
+define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
 
 // Permission check
 if (!current_user_can('activate_plugins'))
@@ -53,4 +54,31 @@ function send2crm_delete_options(): void
         }
     }
 
+}
+
+function send2crm_delete_releases() : void 
+{
+    $upload_dir = wp_upload_dir();
+    $releases_dir = $upload_dir['basedir'] . UPLOAD_FOLDERNAME;
+    remove_folder($releases_dir);
+    
+}
+
+/**
+ * Delete the plugin folder.
+ *
+ * @since    1.0.0
+ * 
+ * @param    string    $dir    The plugin directory.
+ * @return   bool    True on success, otherwise false.
+ */
+function remove_folder( $dir ) : bool {
+    if ( ! is_dir( $dir ) ) {
+        return;
+    }
+    $files = array_diff( scandir( $dir ), array( '.', '..' ) );
+    foreach ( $files as $file ) {
+        ( is_dir( "$dir/$file" ) ) ? delete_plugin_folder( "$dir/$file" ) : unlink( "$dir/$file" );
+    }
+    return rmdir( $dir );
 }
