@@ -40,6 +40,7 @@ if (!current_user_can('activate_plugins'))
 }
 
 send2crm_delete_options();
+send2crm_delete_releases();
 
 /**
  * Delete all wp_options records that start with 'send2crm_'.
@@ -60,7 +61,7 @@ function send2crm_delete_releases() : void
 {
     $upload_dir = wp_upload_dir();
     $releases_dir = $upload_dir['basedir'] . UPLOAD_FOLDERNAME;
-    remove_folder($releases_dir);
+    $success = remove_folder($releases_dir);
     
 }
 /**
