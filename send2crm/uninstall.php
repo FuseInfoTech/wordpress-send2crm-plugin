@@ -32,6 +32,7 @@ if (!defined('WP_UNINSTALL_PLUGIN'))
 }
 
 define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
+define('OPTION_PREFIX', 'send2crm_');
 
 // Permission check
 if (!current_user_can('activate_plugins'))
@@ -50,11 +51,10 @@ send2crm_delete_releases();
 function send2crm_delete_options(): void
 {
     foreach ( wp_load_alloptions() as $option => $value ) {
-        if ( strpos( $option, 'send2crm_' ) === 0 ) {
+        if ( is_string( $option ) && str_starts_with( $option, OPTION_PREFIX)) {
             delete_option( $option );
         }
     }
-
 }
 
 function send2crm_delete_releases() : void 
