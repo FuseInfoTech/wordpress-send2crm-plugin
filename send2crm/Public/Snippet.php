@@ -12,7 +12,6 @@ if (!defined('ABSPATH')) exit;
 #region Constants
 define('JS_FOLDERNAME', 'js/');
 define('SNIPPET_FILENAME', JS_FOLDERNAME . 'send2crm-setup.js');
-define('ADDITIONAL_SETTINGS_FILENAME', 'js/additional-settings.js');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -406,7 +405,6 @@ class Snippet {
         }
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
         add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
-        add_action('wp_enqueue_scripts',array($this,'applyAdditionalSettings'));
     }
 
 
@@ -524,6 +522,7 @@ class Snippet {
         ));
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
         wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
+        $this->apply_additional_settings($snippetId);
     }
 
     /**
@@ -531,17 +530,7 @@ class Snippet {
      * 
      * @since   1.0.0
      */
-    public function applyAdditionalSettings() {
-        $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
-        $settingJsPath = plugin_dir_path( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
-        $settingJsId = "{$this->settings->pluginSlug}-settings";
-        $settingJSVersion = file_exists($settingJsPath) ? filemtime($settingJsPath) : $this->version;
-        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $settingJSVersion, false ) === false)
-        {
-            add_settings_error( $settingJsId, esc_attr( 'settings_updated' ) , "Additional Settings Javascript could not be registered - No Additional Settings will be applied.", 'error' );
-            return;
-        }
-
+    public function apply_additional_settings(string $javascriptId) : void {
         $settingsArray = array();
         $this->addSettingIfNotEmpty($settingsArray,'debug','debug_enabled',FILTER_VALIDATE_BOOLEAN);
         $this->addSettingIfNotEmpty($settingsArray,'logPrefix','log_prefix');
@@ -571,11 +560,10 @@ class Snippet {
         $this->addSettingIfNotEmpty($servicePathsArray,'formPath','form_path');
         $this->addSettingIfNotEmpty($servicePathsArray,'visitorPath','visitor_path');
 
-        wp_enqueue_script($settingJsId, $settingJsUrl, array(), $this->version, false);
         $settingsJson = json_encode($settingsArray);
         $servicePathsJson = json_encode($servicePathsArray);
         $passArraysToJs = "const servicePaths = {$servicePathsJson};const additionalSettings = {$settingsJson};";
-        wp_add_inline_script( $settingJsId, $passArraysToJs, 'before');
+        wp_add_inline_script( $javascriptId, $passArraysToJs, 'before');
     }
 
     private function addSettingIfNotEmpty(array &$settings, string $key, string $fieldId,  $filter = null) {
