@@ -254,13 +254,6 @@ public function __construct(Settings $settings, string $version) {
             add_settings_error( 'js_version', esc_attr( 'settings_updated' ), $newVersion . ' downloaded successfully!', 'updated' );
         }
 
-        if ($removeJS) {
-            $success = $this->remove_release_files($currentVersion);
-            if ($success === false) {
-                add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to remove local files for {$currentVersion}", 'error' );
-            }
-        }
-
         return $newValue;
     }
     /**
@@ -288,7 +281,7 @@ public function __construct(Settings $settings, string $version) {
         $success = false;
         //TODO 
         if (file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME)) {
-            $success = wp_delete_file($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
+            $success = wp_delete_file($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME) ?? false;
         }
         return $success;
     }

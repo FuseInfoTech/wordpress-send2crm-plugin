@@ -93,7 +93,6 @@ jQuery(document).ready(function($) {
         let options = [];
         if (releases) {
             releases.forEach((release) => {
-            console.log(release);
             options.push(
                 $('<option>', {
                     value: release.tag_name,
