@@ -12,6 +12,8 @@ if (!defined('ABSPATH')) exit;
 #region Constants
 define('JS_FOLDERNAME', 'js/');
 define('SNIPPET_FILENAME', JS_FOLDERNAME . 'send2crm-setup.js');
+define('ADDITIONAL_SETTINGS_URL', 'https://fuseit.atlassian.net/wiki/x/E4Dogg');
+define('CLIENT_CONFIG_URL','https://fuseit.atlassian.net/wiki/x/FYBagw');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -44,7 +46,8 @@ class Snippet {
     public function __construct(Settings $settings, string $version) {
         $this->settings = $settings;
         $this->version = $version;
-
+        $clientConfigUrl = CLIENT_CONFIG_URL;
+        $additionalSettingsUrl = ADDITIONAL_SETTINGS_URL;
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
 
@@ -57,14 +60,14 @@ class Snippet {
             'api_key',
             'Send2CRM API Key<span style="color: #d63638;">*</span>',
             array($this, 'render_required_text_input'),
-            'The shared API key configured for your service in Salesforce. This identifies and authenticates requests from your WordPress site to your CRM.<br/><a href="https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2203746325/Client+Configuration" target="_blank">Where do I find this?</a>'
+            "The shared API key configured for your service in Salesforce. This identifies and authenticates requests from your WordPress site to your CRM.<br/><a href='{$clientConfigUrl}' target='_blank'>Where do I find this?</a>"
         );
 
         $this->settings->add_field(
             'api_domain',
             'Send2CRM API Domain<span style="color: #d63638;">*</span>',
             array($this, 'render_required_text_input'),
-            'The domain where your Send2CRM service is hosted. This is either your public site configured in Salesforce or the scaling service or proxy end point.<br/><strong>Format:</strong> yourdomain.force.com (without https://)<br/><a href="https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2203746325/Client+Configuration">What should I enter?</a>'
+            "The domain where your Send2CRM service is hosted. This is either your public site configured in Salesforce or the scaling service or proxy end point.<br/><strong>Format:</strong> yourdomain.force.com (without https://)<br/><a href='{$clientConfigUrl}' target='_blank'>What should I enter?</a>"
         );
 
         //Create additional settings groups and sections
@@ -75,6 +78,14 @@ class Snippet {
             array($this,'sanitize_and_validate_settings'), 
             $customizeTabName, 
             'Additional Settings'
+        );
+
+        //Create section to hold the additional settings documentation text
+        $this->settings->add_section(
+            'documentation',
+            'Documentation',
+            "Configure the JavaScript library to connect your WordPress site with Salesforce CRM. <a href='{$additionalSettingsUrl}' target='_blank'>View Documentation →</a>",
+            $customizeTabName
         );
 
         //Create section for cookies settings

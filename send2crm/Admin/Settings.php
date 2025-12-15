@@ -7,8 +7,7 @@ namespace Send2CRM\Admin;
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
 #region Constants
-DEFINE('DEFAULT_GROUPING_NAME', 'settings');
-DEFINE('DOCS_URL', 'https://fuseit.atlassian.net/wiki/spaces/send2crm/pages/2196471809/JavaScript+client');
+define('DEFAULT_GROUPING_NAME', 'settings');
 #endregion
 
 /**
@@ -221,8 +220,6 @@ class Settings {
             <?php } ?> 
         </h2>
 
-        <p id="settings-description">Configure the JavaScript library to connect your WordPress site with Salesforce CRM. <a href="#">View Documentation →</a></p>
-        
         <form method="post" action="options.php"> 
             <?php
                 foreach ($this->groups as $groupName => $groupDetails) { 
@@ -258,7 +255,7 @@ class Settings {
         if (empty($description)) {
             return;
         }
-        echo "<p>".esc_html($description)."</p>";
+        echo "<p>".wp_kses_post($description)."</p>";
     }
     #endregion
 
