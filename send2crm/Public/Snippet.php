@@ -42,7 +42,7 @@ class Snippet {
      */
     private string $version;
 
-
+    #region Constructor
     public function __construct(Settings $settings, string $version) {
         $this->settings = $settings;
         $this->version = $version;
@@ -402,21 +402,7 @@ class Snippet {
         );
     }
 
-    /**
-     * Register all the hooks of this class.
-     *
-     * @since    1.0.0
-     * @param   $isAdmin    Whether the current request is for an administrative interface page.
-    */
-    public function initializeHooks(bool $isAdmin): void
-    {
-        if ($isAdmin) {
-            return;
-        }
-        //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
-    }
-
+    #endregion
 
     #region Settings API Callbacks
     /**
@@ -428,24 +414,22 @@ class Snippet {
      * @return  array   An array of sanitized and validated settings.
      */ 
     public function sanitize_and_validate_settings(array | null $settings) : array {
-        //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
         $input = $settings ?? array();
         $sanitizedOutput = array();
 
         foreach ($input as $key => $value) {
             $sanitizedOutput[$key] = sanitize_text_field($value);
-            //TODO Add validation based oin the field type. Do we also need to do this on the front end to provide a better user expereience?
+            //TODO Add validation based in the field type. Do we also need to do this on the front end to provide a better user expereience?
         }
         return $sanitizedOutput;
     }
 
 
     /**
-     * Callback for displaying the text input field.
+     * Callback for displaying the text input field on the settings page.
      * 
      * @since   1.0.0
-     * @param   string  $fieldId        The ID of the field.
-     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
+     * @param   array  $arguments The arguments passed to the callback by the settings API hook.
      */
     public function render_text_input(array $arguments): void {
         $fieldId = $arguments['id'];
@@ -464,11 +448,10 @@ class Snippet {
     }
 
     /**
-     * Callback for displaying the text input field.
+     * Callback for displaying the text input field that a user it required to enter on the settings page.
      * 
      * @since   1.0.0
-     * @param   string  $fieldId        The ID of the field.
-     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
+     * @param   array  $arguments The arguments passed to the callback by the settings API hook.
      */
     public function render_required_text_input(array $arguments): void {
         $fieldId = $arguments['id'];
@@ -488,7 +471,20 @@ class Snippet {
     #endregion
 
     #region Public Functions
-
+    /**
+     * Register all the hooks of this class.
+     *
+     * @since    1.0.0
+     * @param   $isAdmin    Whether the current request is for an administrative interface page.
+    */
+    public function initializeHooks(bool $isAdmin): void
+    {
+        if ($isAdmin) {
+            return;
+        }
+        //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
+        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
+    }
 
     /**
      * Callback for inserting the Send2CRM snippet in the header section of the public facing site.
@@ -538,6 +534,7 @@ class Snippet {
     /**
      * Callback for adding Javascript with additional settings for the Send2CRM Service.
      * 
+     * @param   string  $javascriptId   The ID of the Javascript snippet
      * @since   1.0.0
      */
     public function apply_additional_settings(string $javascriptId) : void {
@@ -575,7 +572,9 @@ class Snippet {
         $passArraysToJs = "const servicePaths = {$servicePathsJson};const additionalSettings = {$settingsJson};";
         wp_add_inline_script( $javascriptId, $passArraysToJs, 'before');
     }
+    #endregion
 
+    #region Private Functions
     /**
      * Adds a setting to the settings array if it is not empty using the provided field data and input filter.
      * 
