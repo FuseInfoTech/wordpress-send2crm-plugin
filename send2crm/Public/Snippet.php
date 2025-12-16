@@ -62,7 +62,6 @@ class Snippet {
             array($this, 'render_required_text_input'),
             "The shared API key configured for your service in Salesforce. This identifies and authenticates requests from your WordPress site to your CRM.<br/><a href='{$clientConfigUrl}' target='_blank'>Where do I find this?</a>"
         );
-
         $this->settings->add_field(
             'api_domain',
             'Send2CRM API Domain<span style="color: #d63638;">*</span>',
