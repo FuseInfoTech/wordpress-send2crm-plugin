@@ -576,6 +576,15 @@ class Snippet {
         wp_add_inline_script( $javascriptId, $passArraysToJs, 'before');
     }
 
+    /**
+     * Adds a setting to the settings array if it is not empty using the provided field data and input filter.
+     * 
+     * @since   1.0.0
+     * @param   array   &$settings  The settings array to add the setting to.
+     * @param   string  $key        The key to add the setting to.
+     * @param   string  $fieldId    The ID of the field to get the setting from.
+     * @param   string  $filter     The input filter to apply to the setting value. This is on of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
+     */
     private function addSettingIfNotEmpty(array &$settings, string $key, string $fieldId,  $filter = null) {
         $value = $this->settings->getSetting($fieldId);
         if ($value !== array() && empty($value) === false) {

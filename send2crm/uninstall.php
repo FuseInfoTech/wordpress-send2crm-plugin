@@ -57,6 +57,11 @@ function send2crm_delete_options(): void
     }
 }
 
+/**
+ * Delete the releases directory.
+ * 
+ * @since    1.0.0
+ */
 function send2crm_delete_releases() : void 
 {
     $upload_dir = wp_upload_dir();

@@ -127,6 +127,11 @@ class Send2CRM {
         $this->initialize_hooks();
     }
 
+    /**
+     * Initialize the hooks of the plugin so plugin functions are called correctly.
+     * 
+     * @since    1.0.0
+     */
     public function initialize_hooks() {
 
         $isAdmin = is_admin();
