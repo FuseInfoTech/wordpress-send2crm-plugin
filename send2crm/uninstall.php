@@ -31,8 +31,8 @@ if (!defined('WP_UNINSTALL_PLUGIN'))
     exit;
 }
 
-define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
-define('OPTION_PREFIX', 'send2crm_');
+define('SEND2CRM_UPLOAD_FOLDERNAME', '/send2crm-releases/');
+define('SEND2CRM_OPTION_PREFIX', 'send2crm_');
 
 // Permission check
 if (!current_user_can('activate_plugins'))
@@ -51,7 +51,7 @@ send2crm_delete_releases();
 function send2crm_delete_options(): void
 {
     foreach ( wp_load_alloptions() as $option => $value ) {
-        if ( is_string( $option ) && str_starts_with( $option, OPTION_PREFIX)) {
+        if ( is_string( $option ) && str_starts_with( $option, SEND2CRM_OPTION_PREFIX)) {
             delete_option( $option );
         }
     }
@@ -60,7 +60,7 @@ function send2crm_delete_options(): void
 function send2crm_delete_releases() : void 
 {
     $upload_dir = wp_upload_dir();
-    $releases_dir = $upload_dir['basedir'] . UPLOAD_FOLDERNAME;
+    $releases_dir = $upload_dir['basedir'] . SEND2CRM_UPLOAD_FOLDERNAME;
     $success = remove_folder($releases_dir);
     
 }
