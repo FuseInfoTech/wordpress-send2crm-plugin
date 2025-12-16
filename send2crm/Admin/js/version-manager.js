@@ -93,7 +93,6 @@ jQuery(document).ready(function($) {
         let options = [];
         if (releases) {
             releases.forEach((release) => {
-            console.log(release);
             options.push(
                 $('<option>', {
                     value: release.tag_name,
@@ -102,11 +101,19 @@ jQuery(document).ready(function($) {
                 })
             );
         });
+        } else if (currentVersion) {
+            options.push(
+                $('<option>', {
+                    value: currentVersion,
+                    text: currentVersion + ' (Fetch Version for Details)',
+                    selected: true
+                })
+            );
         } else {
            options.push(
                 $('<option>', {
                     value: '',
-                    text: 'No releases found. Click the Refresh button to fetch releases.',
+                    text: 'Click "Fetch Versions" to load available versions',
                     selected: true,
                     disabled: true
                 })

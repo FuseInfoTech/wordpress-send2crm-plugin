@@ -11,8 +11,9 @@ if (!defined('ABSPATH')) exit;
 
 #region Constants
 define('JS_FOLDERNAME', 'js/');
-define('SNIPPET_FILENAME', JS_FOLDERNAME . 'sri-snippet.js'); //TODO Fix this so it is either called a path or actually references a filename
-define('ADDITIONAL_SETTINGS_FILENAME', 'js/additional-settings.js');
+define('SNIPPET_FILENAME', JS_FOLDERNAME . 'send2crm-setup.js');
+define('ADDITIONAL_SETTINGS_URL', 'https://fuseit.atlassian.net/wiki/x/E4Dogg');
+define('CLIENT_CONFIG_URL','https://fuseit.atlassian.net/wiki/x/FYBagw');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -41,31 +42,31 @@ class Snippet {
      */
     private string $version;
 
-
+    #region Constructor
     public function __construct(Settings $settings, string $version) {
-        error_log('Initializing Public facing Send2CRM Plugin'); //TODO Remove Debug statements
         $this->settings = $settings;
         $this->version = $version;
+        $clientConfigUrl = CLIENT_CONFIG_URL;
+        $additionalSettingsUrl = ADDITIONAL_SETTINGS_URL;
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
 
         $this->settings->add_section(
             'settings', 
-            'Required Settings', 
-            'The following settings are required for Send2CRM to function. The Send2CRM snippet will not be included until they are added.'
+            'Required Configuration', 
+            'API credentials needed for Send2CRM to communicate with Salesforce.'
         );
         $this->settings->add_field(
             'api_key',
-            'Send2CRM API Key',
-            array($this, 'render_text_input'),
-            'Enter the shared API key configured for your service in Salesforce.'
+            'Send2CRM API Key<span style="color: #d63638;">*</span>',
+            array($this, 'render_required_text_input'),
+            "The shared API key configured for your service in Salesforce. This identifies and authenticates requests from your WordPress site to your CRM.<br/><a href='{$clientConfigUrl}' target='_blank'>Where do I find this?</a>"
         );
-
         $this->settings->add_field(
             'api_domain',
-            'Send2CRM API Domain',
-            array($this, 'render_text_input'),
-            'Enter the domain where the Send2CRM service is hosted, in the case of the Salesforce package this will be the public site configured for Send2CRM endpoints.'
+            'Send2CRM API Domain<span style="color: #d63638;">*</span>',
+            array($this, 'render_required_text_input'),
+            "The domain where your Send2CRM service is hosted. This is either your public site configured in Salesforce or the scaling service or proxy end point.<br/><strong>Format:</strong> yourdomain.force.com (without https://)<br/><a href='{$clientConfigUrl}' target='_blank'>What should I enter?</a>"
         );
 
         //Create additional settings groups and sections
@@ -76,6 +77,14 @@ class Snippet {
             array($this,'sanitize_and_validate_settings'), 
             $customizeTabName, 
             'Additional Settings'
+        );
+
+        //Create section to hold the additional settings documentation text
+        $this->settings->add_section(
+            'documentation',
+            'Documentation',
+            "Configure the JavaScript library to connect your WordPress site with Salesforce CRM. <a href='{$additionalSettingsUrl}' target='_blank'>View Documentation →</a>",
+            $customizeTabName
         );
 
         //Create section for cookies settings
@@ -393,24 +402,7 @@ class Snippet {
         );
     }
 
-    /**
-     * Register all the hooks of this class.
-     *
-     * @since    1.0.0
-     * @param   $isAdmin    Whether the current request is for an administrative interface page.
-    */
-    public function initializeHooks(bool $isAdmin): void
-    {
-        if ($isAdmin) {
-            error_log('Skipping Snippet Hooks for Admin Page'); //TODO Remove Debug statements;
-            return;
-        }
-        error_log('Add Snippet Action Hook'); //TODO Remove Debug statements  
-        //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
-        add_action('wp_enqueue_scripts',array($this,'applyAdditionalSettings'));
-    }
-
+    #endregion
 
     #region Settings API Callbacks
     /**
@@ -422,29 +414,25 @@ class Snippet {
      * @return  array   An array of sanitized and validated settings.
      */ 
     public function sanitize_and_validate_settings(array | null $settings) : array {
-        error_log('Sanitize and Validate Settings :' . serialize($settings)); //TODO Remove Debug statements
-        //TODO get the current settings and use those as a starting point to stop clearing settings when they aren't included in the form
         $input = $settings ?? array();
         $sanitizedOutput = array();
 
         foreach ($input as $key => $value) {
             $sanitizedOutput[$key] = sanitize_text_field($value);
-            //TODO Add validation based oin the field type. Do we also need to do this on the front end to provide a better user expereience?
+            //TODO Add validation based in the field type. Do we also need to do this on the front end to provide a better user expereience?
         }
         return $sanitizedOutput;
     }
 
 
     /**
-     * Callback for displaying the text input field.
+     * Callback for displaying the text input field on the settings page.
      * 
      * @since   1.0.0
-     * @param   string  $fieldId        The ID of the field.
-     * @param   string  $description    The description of the field. If provided the description will be displayed below the form input.
+     * @param   array  $arguments The arguments passed to the callback by the settings API hook.
      */
     public function render_text_input(array $arguments): void {
         $fieldId = $arguments['id'];
-        error_log($fieldId);
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
@@ -452,16 +440,51 @@ class Snippet {
         $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
-        echo "<input type='text' id='$fieldId' name='$settingName' value='$value'>";
+        echo "<input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
         if (empty($description)) {
             return;
         }
-        echo "<p class='description'>$description</p>";
+        echo "<p class='description'>" . wp_kses_post($description) ."</p>";
+    }
+
+    /**
+     * Callback for displaying the text input field that a user it required to enter on the settings page.
+     * 
+     * @since   1.0.0
+     * @param   array  $arguments The arguments passed to the callback by the settings API hook.
+     */
+    public function render_required_text_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->getSetting($fieldId,$optionGroup); 
+        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        echo "<input required type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>" . wp_kses_post($description) ."</p>";
     }
     #endregion
 
     #region Public Functions
-
+    /**
+     * Register all the hooks of this class.
+     *
+     * @since    1.0.0
+     * @param   $isAdmin    Whether the current request is for an administrative interface page.
+    */
+    public function initializeHooks(bool $isAdmin): void
+    {
+        if ($isAdmin) {
+            return;
+        }
+        //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
+        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
+    }
 
     /**
      * Callback for inserting the Send2CRM snippet in the header section of the public facing site.
@@ -469,8 +492,6 @@ class Snippet {
      * @since   1.0.0
      */
     public function insertSnippet() {
-        error_log('Inserting Send2CRM Snippet');
-
         $apiKey = $this->settings->getSetting('api_key');
         $apiDomain = $this->settings->getSetting('api_domain');
         $jsVersion = $this->settings->getSetting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
@@ -485,7 +506,6 @@ class Snippet {
             || empty($apiDomain)
             || empty($jsVersion)) 
         {
-            error_log('Send2CRM is activated but not correctly configured. Please use `/wp-admin/admin.php?page=send2crm` to add required settings.');
             return;
         }
         $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
@@ -496,7 +516,7 @@ class Snippet {
         
         if (wp_register_script( $snippetId, $snippetUrl, array(), $snippetVersion, false ) === false)
         {
-            error_log('Snippet could not be registered - Send2CRM will not be activated.');
+            add_settings_error( $snippetId, esc_attr( 'settings-updated'), 'Snippet could not be registered - Send2CRM will not be activated.' , 'error' );
             return;
         } 
         
@@ -507,28 +527,17 @@ class Snippet {
             'hash' => $jsHash
         ));
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
-        error_log('Snippet enqueued at' . $snippetUrl);
         wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
+        $this->apply_additional_settings($snippetId);
     }
 
     /**
      * Callback for adding Javascript with additional settings for the Send2CRM Service.
      * 
+     * @param   string  $javascriptId   The ID of the Javascript snippet
      * @since   1.0.0
      */
-    public function applyAdditionalSettings() {
-        error_log('Apply Additional Settings');
-
-        $settingJsUrl =  plugin_dir_url( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
-        $settingJsPath = plugin_dir_path( __FILE__ ) . ADDITIONAL_SETTINGS_FILENAME;
-        $settingJsId = "{$this->settings->pluginSlug}-settings";
-        $settingJSVersion = file_exists($settingJsPath) ? filemtime($settingJsPath) : $this->version;
-        if (wp_register_script( $settingJsId, $settingJsUrl, array(), $settingJSVersion, false ) === false)
-        {
-            error_log('Additional Settings Javascript could not be registered - No Additional Settings will be applied.');
-            return;
-        }
-
+    public function apply_additional_settings(string $javascriptId) : void {
         $settingsArray = array();
         $this->addSettingIfNotEmpty($settingsArray,'debug','debug_enabled',FILTER_VALIDATE_BOOLEAN);
         $this->addSettingIfNotEmpty($settingsArray,'logPrefix','log_prefix');
@@ -558,14 +567,23 @@ class Snippet {
         $this->addSettingIfNotEmpty($servicePathsArray,'formPath','form_path');
         $this->addSettingIfNotEmpty($servicePathsArray,'visitorPath','visitor_path');
 
-        wp_enqueue_script($settingJsId, $settingJsUrl, array(), $this->version, false);
-        error_log('Additional Settings Javascript enqueued at' . $settingJsUrl);
         $settingsJson = json_encode($settingsArray);
         $servicePathsJson = json_encode($servicePathsArray);
         $passArraysToJs = "const servicePaths = {$servicePathsJson};const additionalSettings = {$settingsJson};";
-        wp_add_inline_script( $settingJsId, $passArraysToJs, 'before');
+        wp_add_inline_script( $javascriptId, $passArraysToJs, 'before');
     }
+    #endregion
 
+    #region Private Functions
+    /**
+     * Adds a setting to the settings array if it is not empty using the provided field data and input filter.
+     * 
+     * @since   1.0.0
+     * @param   array   &$settings  The settings array to add the setting to.
+     * @param   string  $key        The key to add the setting to.
+     * @param   string  $fieldId    The ID of the field to get the setting from.
+     * @param   string  $filter     The input filter to apply to the setting value. This is on of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
+     */
     private function addSettingIfNotEmpty(array &$settings, string $key, string $fieldId,  $filter = null) {
         $value = $this->settings->getSetting($fieldId);
         if ($value !== array() && empty($value) === false) {

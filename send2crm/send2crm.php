@@ -13,14 +13,16 @@
  * @link      https://fuseit.com
  * 
  * Plugin Name: Send2CRM
- * Plugin URI:      @TODO
- * Description:     @TODO
+ * Plugin URI:      https://github.com/FuseInfoTech/wordpress-send2crm-plugin/
+ * Description:     Easily integrate your WordPress site with your CRM through FuseIT’s official Send2CRM Wordpress plugin.
  * Version: 1.0.0
  * Author: FuseIT
  * Author URI: https://fuseit.com
- * License: GPL v2 or later
+ * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Requires PHP:    8.3
+ * Requires PHP:    8.1
+ * Requires at least: 6.5.7
+ * 
  */
 #endregion
 // In strict mode, only a variable of exact type of the type declaration will be accepted.
@@ -84,6 +86,26 @@ class Send2CRM {
     public Settings $settings;
 
     /**
+     * A reference to the Snippet class that inserts the Send2CRM.js.
+     *
+     * @since    1.0.0
+     */
+    public Snippet $snippet;
+
+    /**
+     * A reference to the VersionManager class that handles version updates in the admin page.
+     *
+     * @since    1.0.0
+     */
+    public VersionManager $versionManager;
+
+    /**
+     * Indicates if the plugin hooks has been initialized so we don't double hook.
+     *  
+     */
+    public bool $isInitialized = false;
+
+    /**
      * Define the core functionality of the plugin.
      *
      * Set the plugin name and the plugin version that can be used throughout the plugin.
@@ -96,26 +118,51 @@ class Send2CRM {
         $this->version = SEND2CRM_VERSION;
         $this->slug = SEND2CRM_SLUG;
         $this->menuName = SEND2CRM_MENU_NAME;
+        
         //Register settings,but the hook initialization should only run on Admin area only.
         $this->settings = new Settings($this->slug, $this->menuName);
-        $versionManager = new VersionManager($this->settings, $this->version);
-        $snippet = new Snippet($this->settings, $this->version);
+        $this->snippet = new Snippet($this->settings, $this->version);
+        $this->versionManager = new VersionManager($this->settings, $this->version);
+        if ($this->isInitialized) return;
+        $this->initialize_hooks();
+    }
 
-        error_log('Initializing Send2CRM Plugin'); //TODO Remove Debug statements
+    /**
+     * Initialize the hooks of the plugin so plugin functions are called correctly.
+     * 
+     * @since    1.0.0
+     */
+    public function initialize_hooks() {
 
         $isAdmin = is_admin();
 
         if ($isAdmin)
         {
+            add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
             $this->settings->initializeHooks($isAdmin);
-            $versionManager->initializeHooks($isAdmin);
+            $this->versionManager->initializeHooks($isAdmin);
         } else {
-
-            $snippet->initializeHooks($isAdmin);
-        } 
+            $this->snippet->initializeHooks($isAdmin);
+        }
+        $this->isInitialized = true;
     }
 
-
+    #region Callbacks
+    
+    /** 
+     *  Add a settings link to the plugin page that opens the plugin settings page.
+     * 
+     * @since    1.0.0
+     * @param   array   $links  The standard links on to the plugin page.
+     * @return  array           The changed list of links with our custom links added.
+     */
+    public function add_action_links(array $links): array {
+        $customLinks = array(
+            '<a href="' . admin_url( "admin.php?page={$this->slug}" ) . '">Settings</a>',
+        );
+        return array_merge( $customLinks,$links);
+    }
+    #endregion
 }
 
 //Start the plugin
