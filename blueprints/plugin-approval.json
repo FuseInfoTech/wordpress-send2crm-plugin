@@ -1,0 +1,32 @@
+{
+    "landingPage": "\/wp-admin\/admin.php?page=plugin-check&plugin=send2crm",
+    "preferredVersions": {
+        "php": "8.3",
+        "wp": "latest"
+    },
+    "phpExtensionBundles": [
+        "kitchen-sink"
+    ],
+    "features": {
+        "networking": true
+    },
+    "steps": [
+        {
+            "step": "installPlugin",
+            "pluginData": {
+                "resource": "wordpress.org/plugins",
+                "slug": "plugin-check"
+            }
+        },
+        
+        {
+            "step": "runPHP",
+            "code": "<?php\n\t\t\t\t\tinclude \"\/wordpress\/wp-load.php\";\n\t\t\t\t\t$expected_slug = 'send2crm';\n\t\t\t\t\t$expected_plugins = array (\n  0 => 'plugin-check',\n  1 => 'playground-review-helper',\n);\n\t\t\t\t\t$installed_plugins = array_diff(\n\t\t\t\t\t\tarray_map( \"basename\", glob( WP_PLUGIN_DIR . \"\/*\", GLOB_ONLYDIR ) ),\n\t\t\t\t\t\t$expected_plugins\n\t\t\t\t\t);\n\t\t\t\t\tif ( 1 === count( $installed_plugins) ) {\n\t\t\t\t\t\t$plugin_dir = reset( $installed_plugins );\n\t\t\t\t\t\tif ( $plugin_dir !== $expected_slug ) {\n\t\t\t\t\t\t\tif ( rename( WP_PLUGIN_DIR . \"\/\" . $plugin_dir, WP_PLUGIN_DIR . \"\/\" . $expected_slug ) ) {\n\t\t\t\t\t\t\t\t$active_plugins = get_option( \"active_plugins\" );\n\t\t\t\t\t\t\t\tforeach ( $active_plugins as &$active_plugin ) {\n\t\t\t\t\t\t\t\t\tif ( 0 === strpos( $active_plugin, $plugin_dir ) ) {\n\t\t\t\t\t\t\t\t\t\t$active_plugin = $expected_slug . substr( $active_plugin, strlen( $plugin_dir ) );\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\tupdate_option( \"active_plugins\", $active_plugins );\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t"
+        },
+        {
+            "step": "login",
+            "username": "admin",
+            "password": "password"
+        }
+    ]
+}
