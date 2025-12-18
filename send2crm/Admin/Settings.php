@@ -6,9 +6,7 @@ namespace Send2CRM\Admin;
 
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
-#region Constants
-define('DEFAULT_GROUPING_NAME', 'settings');
-#endregion
+
 
 /**
  * Send2CRM Class that contains and manages plugnin settings and 

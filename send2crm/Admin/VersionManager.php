@@ -12,15 +12,15 @@ use Send2CRM\Admin\Settings;
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('VERSION_MANAGER_FILENAME', 'js/version-manager.js'); //TODO move this to a constant either in the namespace or in the class.
-define('GITHUB_USERNAME', 'FuseInfoTech');
-define('GITHUB_REPO', 'send2crmjs');
-define('MINIMUM_VERSION', '1.21.0');
-define('UPLOAD_FOLDERNAME', '/send2crm-releases/');
+define('SEND2CRM_VERSION_MANAGER_FILENAME', 'js/version-manager.js'); //TODO move this to a constant either in the namespace or in the class.
+define('SEND2CRM_GITHUB_USERNAME', 'FuseInfoTech');
+define('SEND2CRM_GITHUB_REPO', 'send2crmjs');
+define('SEND2CRM_MINIMUM_VERSION', '1.21.0');
+define('SEND2CRM_UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
-define('CDN_URL', 'https://cdn.jsdelivr.net'); //TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
-define('SEND2CRM_CDN', CDN_URL .'/gh/'. GITHUB_USERNAME . '/' . GITHUB_REPO);
+define('SEND2CRM_CDN_URL', 'https://cdn.jsdelivr.net'); //TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
+define('SEND2CRM_CDN', SEND2CRM_CDN_URL .'/gh/'. SEND2CRM_GITHUB_USERNAME . '/' . SEND2CRM_GITHUB_REPO);
 #endregion
 
 /**
@@ -49,16 +49,16 @@ class VersionManager {
 
     private string $githubUsername;
 
-    private string $minimum_version;
+    private string $SEND2CRM_MINIMUM_VERSION;
 
     private array $releases;
 
 public function __construct(Settings $settings, string $version) {
         $this->settings = $settings;
         $this->version = $version;
-        $this->githubRepo = GITHUB_REPO;
-        $this->githubUsername = GITHUB_USERNAME;
-        $this->minimum_version = MINIMUM_VERSION;
+        $this->githubRepo = SEND2CRM_GITHUB_REPO;
+        $this->githubUsername = SEND2CRM_GITHUB_USERNAME;
+        $this->SEND2CRM_MINIMUM_VERSION = SEND2CRM_MINIMUM_VERSION;
 
         $this->initialize_settings();
     }
@@ -279,9 +279,9 @@ public function __construct(Settings $settings, string $version) {
     public function remove_release_files($version) : bool {
         $upload_dir = wp_upload_dir();
         $success = false;
-        //TODO 
-        if (file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME)) {
-            $success = wp_delete_file($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME) ?? false;
+
+        if (file_exists($upload_dir['basedir'] . SEND2CRM_UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME)) {
+            $success = wp_delete_file($upload_dir['basedir'] . SEND2CRM_UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME) ?? false;
         }
         return $success;
     }
@@ -297,7 +297,7 @@ public function __construct(Settings $settings, string $version) {
      */
     public function release_file_exists($version): bool {
         $upload_dir = wp_upload_dir();
-        return file_exists($upload_dir['basedir'] . UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
+        return file_exists($upload_dir['basedir'] . SEND2CRM_UPLOAD_FOLDERNAME . $version . '/' . SEND2CRM_JS_FILENAME);
     }
 
     /**
@@ -307,8 +307,8 @@ public function __construct(Settings $settings, string $version) {
      */
     public function insert_version_manager_scripts() {
         
-        $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . VERSION_MANAGER_FILENAME;
-        $versionManagerJsPath = plugin_dir_path( __FILE__ ) . VERSION_MANAGER_FILENAME;
+        $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . SEND2CRM_VERSION_MANAGER_FILENAME;
+        $versionManagerJsPath = plugin_dir_path( __FILE__ ) . SEND2CRM_VERSION_MANAGER_FILENAME;
         $versionManagerJSId = "{$this->settings->pluginSlug}-version-manager";
         $versionManagerJSVersion = file_exists($versionManagerJsPath) ? filemtime($versionManagerJsPath) : $this->version;
 
@@ -430,7 +430,7 @@ public function __construct(Settings $settings, string $version) {
         }
         
         // Filter releases by minimum version
-        $filtered_releases = $this->filter_by_minimum_version($releases);
+        $filtered_releases = $this->filter_by_SEND2CRM_MINIMUM_VERSION($releases);
         return array(
             'success' => true,
             'releases' => $filtered_releases
@@ -443,10 +443,10 @@ public function __construct(Settings $settings, string $version) {
      * @since 1.0.0
      * 
      * @param array $releases the array of releases to filter
-     * @return array the filtered array of releases that are greater than or equal to the MINIMUM_VERSION constant
+     * @return array the filtered array of releases that are greater than or equal to the SEND2CRM_MINIMUM_VERSION constant
      */
-    private function filter_by_minimum_version(array $releases) : array {
-        if (empty($this->minimum_version)) {
+    private function filter_by_SEND2CRM_MINIMUM_VERSION(array $releases) : array {
+        if (empty($this->SEND2CRM_MINIMUM_VERSION)) {
             return $releases;
         }
         
@@ -455,7 +455,7 @@ public function __construct(Settings $settings, string $version) {
         foreach ($releases as $release) {
             $version = ltrim($release['tag_name'], 'v');
             
-            if (version_compare($version, $this->minimum_version, '>=')) {
+            if (version_compare($version, $this->SEND2CRM_MINIMUM_VERSION, '>=')) {
                 $filtered[$release['tag_name']] = $release;
             }
         }
@@ -479,7 +479,7 @@ public function __construct(Settings $settings, string $version) {
         
         // Create a downloads directory in wp-content/uploads
         $upload_dir = wp_upload_dir();
-        $download_dir = $upload_dir['basedir'] . UPLOAD_FOLDERNAME . $tag_name;
+        $download_dir = $upload_dir['basedir'] . SEND2CRM_UPLOAD_FOLDERNAME . $tag_name;
         
         if (!file_exists($download_dir)) {
             wp_mkdir_p($download_dir);
@@ -500,7 +500,7 @@ public function __construct(Settings $settings, string $version) {
                     'success' => true,
                     'message' => 'File already exists',
                     'file_path' => $file_path,
-                    'file_url' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . $tag_name . '/' . $filename,
+                    'file_url' => $upload_dir['baseurl'] . SEND2CRM_UPLOAD_FOLDERNAME . $tag_name . '/' . $filename,
                     'skipped' => true
                 );
                 continue;
@@ -551,7 +551,7 @@ public function __construct(Settings $settings, string $version) {
                 'success' => true,
                 'message' => 'Downloaded successfully',
                 'file_path' => $file_path,
-                'file_url' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . $tag_name . '/' . $filename,
+                'file_url' => $upload_dir['baseurl'] . SEND2CRM_UPLOAD_FOLDERNAME . $tag_name . '/' . $filename,
                 'file_size' => size_format(filesize($file_path))
             );
         }
@@ -561,7 +561,7 @@ public function __construct(Settings $settings, string $version) {
             'message' => $all_success ? 'All files downloaded successfully' : 'Some files failed to download',
             'files' => $results,
             'download_dir' => $download_dir,
-            'upload_url' => $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . $tag_name  . '/',
+            'upload_url' => $upload_dir['baseurl'] . SEND2CRM_UPLOAD_FOLDERNAME . $tag_name  . '/',
             'version' => $tag_name
         );
     }

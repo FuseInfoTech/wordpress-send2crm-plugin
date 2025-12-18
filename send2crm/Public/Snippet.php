@@ -10,10 +10,10 @@ use Send2CRM\Admin\VersionManager;
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('JS_FOLDERNAME', 'js/');
-define('SNIPPET_FILENAME', JS_FOLDERNAME . 'send2crm-setup.js');
-define('ADDITIONAL_SETTINGS_URL', 'https://fuseit.atlassian.net/wiki/x/E4Dogg');
-define('CLIENT_CONFIG_URL','https://fuseit.atlassian.net/wiki/x/FYBagw');
+define('SEND2CRM_JS_FOLDERNAME', 'js/');
+define('SEND2CRM_SNIPPET_FILENAME', SEND2CRM_JS_FOLDERNAME . 'send2crm-setup.js');
+define('SEND2CRM_ADDITIONAL_SETTINGS_URL', 'https://fuseit.atlassian.net/wiki/x/E4Dogg');
+define('SEND2CRM_CLIENT_CONFIG_URL','https://fuseit.atlassian.net/wiki/x/FYBagw');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -46,8 +46,8 @@ class Snippet {
     public function __construct(Settings $settings, string $version) {
         $this->settings = $settings;
         $this->version = $version;
-        $clientConfigUrl = CLIENT_CONFIG_URL;
-        $additionalSettingsUrl = ADDITIONAL_SETTINGS_URL;
+        $clientConfigUrl = SEND2CRM_CLIENT_CONFIG_URL;
+        $additionalSettingsUrl = SEND2CRM_ADDITIONAL_SETTINGS_URL;
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
 
@@ -500,7 +500,7 @@ class Snippet {
 
         $upload_dir = wp_upload_dir();
         
-        $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . UPLOAD_FOLDERNAME . "{$jsVersion}/";
+        $jsPath = $useCDN ? SEND2CRM_CDN . "@{$jsVersion}/" : $upload_dir['baseurl'] . SEND2CRM_UPLOAD_FOLDERNAME . "{$jsVersion}/";
 
         if (empty($apiKey) 
             || empty($apiDomain)
@@ -508,8 +508,8 @@ class Snippet {
         {
             return;
         }
-        $snippetUrl =  plugin_dir_url( __FILE__ ) . SNIPPET_FILENAME;
-        $snippetPath = plugin_dir_path( __FILE__ ) . SNIPPET_FILENAME;
+        $snippetUrl =  plugin_dir_url( __FILE__ ) . SEND2CRM_SNIPPET_FILENAME;
+        $snippetPath = plugin_dir_path( __FILE__ ) . SEND2CRM_SNIPPET_FILENAME;
         $snippetVersion = file_exists($snippetPath) ? filemtime($snippetPath) : $this->version;
         $snippetId = "{$this->settings->pluginSlug}-snippet";
 
