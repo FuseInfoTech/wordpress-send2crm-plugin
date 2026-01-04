@@ -520,19 +520,26 @@ class Snippet {
             return;
         } 
         
-        $snippetJson = json_encode(array(
+        $snippet_data = array(
             'api_key' => $apiKey,
             'api_domain' => $apiDomain,
             'js_location' => $jsPath . SEND2CRM_JS_FILENAME . "?ver={$jsVersion}",
             'hash' => $jsHash
-        ));
+        );
         wp_enqueue_script($snippetId, $snippetUrl, array(), $this->version, false);
-        wp_add_inline_script( $snippetId, "const snippetData = {$snippetJson};", 'before');
+        wp_add_inline_script(
+            $snippetId,
+            sprintf(
+                'const snippetData = %s;',
+                wp_json_encode($snippet_data),
+            ),
+            'before',
+        );
         $this->apply_additional_settings($snippetId);
     }
 
     /**
-     * Callback for adding Javascript with additional settings for the Send2CRM Service.
+     * Adds Javascript with additional settings for the Send2CRM Service.
      * 
      * @param   string  $javascriptId   The ID of the Javascript snippet
      * @since   1.0.0
@@ -567,10 +574,14 @@ class Snippet {
         $this->addSettingIfNotEmpty($servicePathsArray,'formPath','form_path');
         $this->addSettingIfNotEmpty($servicePathsArray,'visitorPath','visitor_path');
 
-        $settingsJson = json_encode($settingsArray);
-        $servicePathsJson = json_encode($servicePathsArray);
-        $passArraysToJs = "const servicePaths = {$servicePathsJson};const additionalSettings = {$settingsJson};";
-        wp_add_inline_script( $javascriptId, $passArraysToJs, 'before');
+        wp_add_inline_script(
+            $javascriptId,
+            sprintf(
+                'const servicePaths = %s;const additionalSettings = %s;',
+                wp_json_encode($servicePathsArray),
+                wp_json_encode($settingsArray),
+            ),
+            'before',);
     }
     #endregion
 

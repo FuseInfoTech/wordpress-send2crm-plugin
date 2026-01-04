@@ -117,7 +117,8 @@ public function __construct(Settings $settings, string $version) {
             //Hook on admin page to add javascript
             add_action('admin_enqueue_scripts', array($this,'insert_version_manager_scripts'));
             //Hook on ajax call to retrieve send2crm releases
-            add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
+            add_action('wp_ajax_fetch_send2crm_release', array($this, 'ajax_fetch_releases'));
+            //TODO Remove this ajax as it is no longer needed
             add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
             add_filter('pre_update_option_send2crm_settings_option', array($this, 'filter_version_settings'),10,3);
         }
@@ -420,7 +421,7 @@ public function __construct(Settings $settings, string $version) {
         }
         
         $body = wp_remote_retrieve_body($response);
-        $releases = json_decode($body, true);
+        $releases = wp_json_decode($body, true);
         
         if (!is_array($releases)) {
             return array(
