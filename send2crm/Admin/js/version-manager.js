@@ -30,7 +30,7 @@ jQuery(document).ready(function($) {
             url: send2crmReleases.ajax_url,
             type: 'POST',
             data: {
-                action: 'fetch_send2crm_releases',
+                action: 'send2crm_fetch_releases',
                 nonce: send2crmReleases.nonce
             },
             success: function(response) {

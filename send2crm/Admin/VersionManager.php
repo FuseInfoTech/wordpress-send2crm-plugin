@@ -116,7 +116,7 @@ public function __construct(Settings $settings, string $version) {
             //Hook on admin page to add javascript
             add_action('admin_enqueue_scripts', array($this,'insert_version_manager_scripts'));
             //Hook on ajax call to retrieve send2crm releases
-            add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
+            add_action('wp_ajax_send2crm_fetch_releases', array($this, 'ajax_fetch_releases'));
             //Hook to filter send2crm settings before they are saved to database
             add_filter('pre_update_option_send2crm_settings_option', array($this, 'filter_version_settings'),10,3);
         }
