@@ -52,3 +52,6 @@ wp-config.php
 
 # WordPress Playground Debug Server
 .playground-xdebug-root
+
+# SVN Folder
+/svn
