@@ -49,7 +49,7 @@ class VersionManager {
 
     private string $githubUsername;
 
-    private string $SEND2CRM_MINIMUM_VERSION;
+    private string $minimumVersion;
 
     private array $releases;
 
@@ -58,8 +58,7 @@ public function __construct(Settings $settings, string $version) {
         $this->version = $version;
         $this->githubRepo = SEND2CRM_GITHUB_REPO;
         $this->githubUsername = SEND2CRM_GITHUB_USERNAME;
-        $this->SEND2CRM_MINIMUM_VERSION = SEND2CRM_MINIMUM_VERSION;
-
+        $this->minimumVersion = SEND2CRM_MINIMUM_VERSION;
         $this->initialize_settings();
     }
 
@@ -431,7 +430,7 @@ public function __construct(Settings $settings, string $version) {
         }
         
         // Filter releases by minimum version
-        $filtered_releases = $this->filter_by_SEND2CRM_MINIMUM_VERSION($releases);
+        $filtered_releases = $this->filter_by_minimum_version($releases);
         return array(
             'success' => true,
             'releases' => $filtered_releases
@@ -446,8 +445,8 @@ public function __construct(Settings $settings, string $version) {
      * @param array $releases the array of releases to filter
      * @return array the filtered array of releases that are greater than or equal to the SEND2CRM_MINIMUM_VERSION constant
      */
-    private function filter_by_SEND2CRM_MINIMUM_VERSION(array $releases) : array {
-        if (empty($this->SEND2CRM_MINIMUM_VERSION)) {
+    private function filter_by_filter_by_minimum_version(array $releases) : array {
+        if (empty($this->minimumVersion)) {
             return $releases;
         }
         
@@ -456,7 +455,7 @@ public function __construct(Settings $settings, string $version) {
         foreach ($releases as $release) {
             $version = ltrim($release['tag_name'], 'v');
             
-            if (version_compare($version, $this->SEND2CRM_MINIMUM_VERSION, '>=')) {
+            if (version_compare($version, $this->minimumVersion, '>=')) {
                 $filtered[$release['tag_name']] = $release;
             }
         }
