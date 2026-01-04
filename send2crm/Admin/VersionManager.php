@@ -116,9 +116,8 @@ public function __construct(Settings $settings, string $version) {
             //Hook on admin page to add javascript
             add_action('admin_enqueue_scripts', array($this,'insert_version_manager_scripts'));
             //Hook on ajax call to retrieve send2crm releases
-            add_action('wp_ajax_fetch_send2crm_release', array($this, 'ajax_fetch_releases'));
-            //TODO Remove this ajax as it is no longer needed
-            add_action('wp_ajax_download_send2crm_release', array($this, 'ajax_download_release'));
+            add_action('wp_ajax_fetch_send2crm_releases', array($this, 'ajax_fetch_releases'));
+            //Hook to filter send2crm settings before they are saved to database
             add_filter('pre_update_option_send2crm_settings_option', array($this, 'filter_version_settings'),10,3);
         }
     }
@@ -372,28 +371,6 @@ public function __construct(Settings $settings, string $version) {
         wp_send_json($result);
     }
 
-     /**
-     * AJAX handler for downloading releases
-     * 
-     * @since 1.0.0
-     * 
-     */
-    public function ajax_download_release() {
-        check_ajax_referer('send2crm_releases_nonce', 'nonce');
-        
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Insufficient permissions');
-        }
-        
-        $tag_name = isset($_POST['tag_name']) ? sanitize_text_field(wp_unslash($_POST['tag_name'])) : '';
-        
-        if (empty($tag_name)) {
-            wp_send_json_error('Missing tag name');
-        }
-        
-        $result = $this->download_release_files($tag_name);
-        wp_send_json($result);
-    }
 
     /**
      * Fetch releases from GitHub API
@@ -420,7 +397,7 @@ public function __construct(Settings $settings, string $version) {
         }
         
         $body = wp_remote_retrieve_body($response);
-        $releases = wp_json_decode($body, true);
+        $releases = json_decode($body, true);
         
         if (!is_array($releases)) {
             return array(
@@ -445,7 +422,7 @@ public function __construct(Settings $settings, string $version) {
      * @param array $releases the array of releases to filter
      * @return array the filtered array of releases that are greater than or equal to the SEND2CRM_MINIMUM_VERSION constant
      */
-    private function filter_by_filter_by_minimum_version(array $releases) : array {
+    private function filter_by_minimum_version(array $releases) : array {
         if (empty($this->minimumVersion)) {
             return $releases;
         }
