@@ -12,14 +12,16 @@ use Send2CRM\Admin\Settings;
 if (!defined('ABSPATH')) exit;
 
 #region Constants
-define('SEND2CRM_VERSION_MANAGER_FILENAME', 'js/version-manager.js'); //TODO move this to a constant either in the namespace or in the class.
+//TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
+
+define('SEND2CRM_VERSION_MANAGER_FILENAME', 'js/version-manager.js');
 define('SEND2CRM_GITHUB_USERNAME', 'FuseInfoTech');
 define('SEND2CRM_GITHUB_REPO', 'send2crmjs');
 define('SEND2CRM_MINIMUM_VERSION', '1.21.0');
 define('SEND2CRM_UPLOAD_FOLDERNAME', '/send2crm-releases/');
 define('SEND2CRM_HASH_FILENAME', 'send2crm.sri-hash.sha384');
 define('SEND2CRM_JS_FILENAME', 'send2crm.min.js');
-define('SEND2CRM_CDN_URL', 'https://cdn.jsdelivr.net'); //TODO create a constants.php for shared constants ones required for a specific class should use live in the class and use the contanst keyword instead
+define('SEND2CRM_CDN_URL', 'https://cdn.jsdelivr.net'); 
 define('SEND2CRM_CDN', SEND2CRM_CDN_URL .'/gh/'. SEND2CRM_GITHUB_USERNAME . '/' . SEND2CRM_GITHUB_REPO);
 #endregion
 
@@ -111,7 +113,7 @@ public function __construct(Settings $settings, string $version) {
      * @since    1.0.0
      * @param  bool    $isAdmin    Whether the current request is for an administrative interface page.
      */
-    public function initializeHooks(bool $isAdmin): void {
+    public function initialize_hooks(bool $isAdmin): void {
         if ($isAdmin) {
             //Hook on admin page to add javascript
             add_action('admin_enqueue_scripts', array($this,'insert_version_manager_scripts'));
@@ -135,8 +137,8 @@ public function __construct(Settings $settings, string $version) {
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId,$optionGroup); 
-        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $value = $this->settings->get_setting($fieldId, $optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
         echo "<select required id='".esc_attr($fieldId)."' name='".esc_attr($settingName)."' data-current-version='".esc_attr($value)."'>";
@@ -160,8 +162,8 @@ public function __construct(Settings $settings, string $version) {
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId); 
-        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $value = $this->settings->get_setting($fieldId); 
+        $settingName = $this->settings->get_setting_name($fieldId,$optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
         echo "<input class='large-text' placeholder='Select a version above and save changes to generate hash' readonly type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
@@ -182,8 +184,8 @@ public function __construct(Settings $settings, string $version) {
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId,$optionGroup); 
-        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $value = $this->settings->get_setting($fieldId,$optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
         $checked = checked($value, 1, false);
@@ -220,19 +222,19 @@ public function __construct(Settings $settings, string $version) {
         $removeJS = false;
         if ($currentVersion !== $newVersion) {
             $updateHash = true;
-            if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
+            if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { 
                 $downloadJS = true;
             }
         } else if ($newUseCDN !== $currentUseCDN) {
             if ($newUseCDN && $this->release_file_exists($newVersion)) { 
                 $removeJS = true;
-            } else if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { //TODO download release on save changes if use CDN is disabled and vesion hasn't been downloaded
+            } else if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) {
                 $downloadJS = true;
             }
         }
 
         if ($updateHash) {
-            $newHash = $this->getHash(SEND2CRM_CDN . "@{$newVersion}/");
+            $newHash = $this->get_hash(SEND2CRM_CDN . "@{$newVersion}/");
             if (empty($newHash)) {
                 add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to update to {$newVersion}", 'error' );
                 $newValue['js_version'] = $currentVersion;
@@ -242,7 +244,7 @@ public function __construct(Settings $settings, string $version) {
             $newValue['js_hash'] = $newHash; //TODO Check the hash is valid before saving?
         }
 
-        if ($downloadJS && $this->check_integrity()) { //TODO implement integrity check fully
+        if ($downloadJS && $this->check_integrity()) {
             $results = $this->download_release_files($newVersion);
             if ($results['success'] === false) {
                 $newValue['js_version'] = $currentVersion;
@@ -264,6 +266,7 @@ public function __construct(Settings $settings, string $version) {
      * @return bool whether the Send2CRM JS file is valid.
      */
     public function check_integrity() :bool {
+         //TODO implement integrity check fully
         return true;
     }
 
@@ -313,7 +316,7 @@ public function __construct(Settings $settings, string $version) {
 
         if (wp_register_script( $versionManagerJSId, $versionManagerJSUrl, array('jquery'), $versionManagerJSVersion, false ) === false) 
         {
-            add_settings_error( 'js_version', esc_attr( 'settings_updated' ), "Unable to register Send2CRM version manager script.", 'error' );
+            add_settings_error( 'js_version', esc_attr('settings_updated'), "Unable to register Send2CRM version manager script.", 'error' );
             return;
         }
         
@@ -345,7 +348,7 @@ public function __construct(Settings $settings, string $version) {
      * @param  string  $location  The folder where the hash file is located of the hash file.
      * @return string the content of the hash file or an empty string if the file does not exist
      */
-    private function getHash(string $location): string {
+    private function get_hash(string $location): string {
         //TODO Add checks for bad paths to prevent critical errors
         $hash = file_get_contents($location . SEND2CRM_HASH_FILENAME);
         if (!$hash) {

@@ -86,13 +86,13 @@ class Settings {
      * @since    1.0.0
      * @param   $isAdmin    Whether the current request is for an administrative interface page.
      */
-    public function initializeHooks(bool $isAdmin): void
+    public function initialize_hooks(bool $isAdmin): void
     {
         if ($isAdmin) {
             // Hook into admin_init 
-            add_action('admin_init', array($this,'initializeSettings'));
+            add_action('admin_init', array($this,'initialize_settings'));
             // Hook into admin_menu to add our page 
-            add_action('admin_menu', array($this,'setupSettingsMenu'));
+            add_action('admin_menu', array($this,'setup_settings_menu'));
         }
     }
 
@@ -104,7 +104,7 @@ class Settings {
      * @since    1.0.0
      * 
      */
-    public function initializeSettings(): void {
+    public function initialize_settings(): void {
         // Register the setting
         foreach ($this->groups as $groupName => $groupDetails) {
             $registerSettingParameters = array(
@@ -149,14 +149,14 @@ class Settings {
      *
      * @since    1.0.0
      */
-    public function setupSettingsMenu() 
+    public function setup_settings_menu() 
     {
         // Add a new menu page 
         add_options_page( "{$this->menuName} Settings", // Page title 
             $this->menuName, // Menu title 
             'manage_options', // Capability required 
             $this->menuSlug, // Menu slug 
-            array($this,'renderSettingsPageContent'), // Callback function 
+            array($this,'render_settings_page_content'), // Callback function 
             99 // Position 
         );
     }
@@ -167,7 +167,7 @@ class Settings {
      * @since   1.0.0
      * @param   activeTab       The name of the active tab.
      */
-    public function renderSettingsPageContent(string $activeTab = ''): void
+    public function render_settings_page_content(string $activeTab = ''): void
     {
         // Check user capabilities
         if (!current_user_can('manage_options'))
@@ -294,7 +294,7 @@ class Settings {
      * @param   string  $key    The name of the setting to retrieve.
      * @return  string  The value of the setting if found, otherwise an empty string.
      */
-    public function getSetting(string $key, string | null $groupName = null, string $default = ''): string {
+    public function get_setting(string $key, string | null $groupName = null, string $default = ''): string {
         if (is_null($groupName)) {
             $fieldDetails = $this->fields[$key] ?? null;
             if (is_null($fieldDetails)) {
@@ -339,7 +339,7 @@ class Settings {
      * @param   string  $groupName  The name of the option group to retrieve the setting from.
      * @return  string  The name of the setting, in the form of option_name[key].
      */
-    public function getSettingName(string $key, string $groupName): string {
+    public function get_setting_name(string $key, string $groupName): string {
         $settingName = "{$this->groups[$groupName]['option_name']}[{$key}]";
         return $settingName;    
     }

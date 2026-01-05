@@ -436,8 +436,8 @@ class Snippet {
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId,$optionGroup); 
-        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $value = $this->settings->get_setting($fieldId, $optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
         echo "<input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
@@ -458,8 +458,8 @@ class Snippet {
         $fieldDetails = $this->settings->get_field($fieldId);
         // Get the current saved value 
         $optionGroup = $fieldDetails['option_group'];
-        $value = $this->settings->getSetting($fieldId,$optionGroup); 
-        $settingName = $this->settings->getSettingName($fieldId,$optionGroup);
+        $value = $this->settings->get_setting($fieldId, $optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
         // Render the input field 
         echo "<input required type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'>";
@@ -477,13 +477,13 @@ class Snippet {
      * @since    1.0.0
      * @param   $isAdmin    Whether the current request is for an administrative interface page.
     */
-    public function initializeHooks(bool $isAdmin): void
+    public function initialize_hooks(bool $isAdmin): void
     {
         if ($isAdmin) {
             return;
         }
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
-        add_action('wp_enqueue_scripts', array($this,'insertSnippet'));
+        add_action('wp_enqueue_scripts', array($this, 'insert_snippet'));
     }
 
     /**
@@ -491,12 +491,12 @@ class Snippet {
      * 
      * @since   1.0.0
      */
-    public function insertSnippet() {
-        $apiKey = $this->settings->getSetting('api_key');
-        $apiDomain = $this->settings->getSetting('api_domain');
-        $jsVersion = $this->settings->getSetting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
-        $jsHash = $this->settings->getSetting('js_hash');
-        $useCDN = $this->settings->getSetting('use_cdn') ?? false;
+    public function insert_snippet() {
+        $apiKey = $this->settings->get_setting('api_key');
+        $apiDomain = $this->settings->get_setting('api_domain');
+        $jsVersion = $this->settings->get_setting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
+        $jsHash = $this->settings->get_setting('js_hash');
+        $useCDN = $this->settings->get_setting('use_cdn') ?? false;
 
         $upload_dir = wp_upload_dir();
         
@@ -516,7 +516,7 @@ class Snippet {
         
         if (wp_register_script( $snippetId, $snippetUrl, array(), $snippetVersion, false ) === false)
         {
-            add_settings_error( $snippetId, esc_attr( 'settings-updated'), 'Snippet could not be registered - Send2CRM will not be activated.' , 'error' );
+            add_settings_error( $snippetId, esc_attr('settings-updated'), 'Snippet could not be registered - Send2CRM will not be activated.' , 'error' );
             return;
         } 
         
@@ -546,33 +546,33 @@ class Snippet {
      */
     public function apply_additional_settings(string $javascriptId) : void {
         $settingsArray = array();
-        $this->addSettingIfNotEmpty($settingsArray,'debug','debug_enabled',FILTER_VALIDATE_BOOLEAN);
-        $this->addSettingIfNotEmpty($settingsArray,'logPrefix','log_prefix');
-        $this->addSettingIfNotEmpty($settingsArray,'personalizationCookie','personalization_cookie',FILTER_VALIDATE_BOOLEAN);
-        $this->addSettingIfNotEmpty($settingsArray,'sessionTimeout','session_timeout',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'syncFrequency','sync_frequency',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'syncFrequencySecondary','sync_frequency_secondary',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'formSelector','form_selector');
-        $this->addSettingIfNotEmpty($settingsArray,'maxFileSize','max_file_size',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'formFailMessage','form_fail_message');
-        $this->addSettingIfNotEmpty($settingsArray,'formIdAttributes','form_id_attributes');
-        $this->addSettingIfNotEmpty($settingsArray,'formMinTime','form_min_time',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'formRateCount','form_rate_count',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'formRateTime','form_rate_time',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'formListenOnButton','form_listen_on_button',FILTER_VALIDATE_BOOLEAN);
-        $this->addSettingIfNotEmpty($settingsArray,'maxStorage','max_storage',FILTER_VALIDATE_INT);
-        $this->addSettingIfNotEmpty($settingsArray,'utmCookie','utm_cookie',FILTER_VALIDATE_BOOLEAN);
-        $this->addSettingIfNotEmpty($settingsArray,'idCookieDomain','id_cookie_domain');
-        $this->addSettingIfNotEmpty($settingsArray,'ignoreBehavior','ignore_behavior');
-        $this->addSettingIfNotEmpty($settingsArray,'disableAutoEvents','disable_auto_events');
-        $this->addSettingIfNotEmpty($settingsArray,'originHost','origin_host');
-        $this->addSettingIfNotEmpty($settingsArray,'ipLookup','ip_lookup');
-        $this->addSettingIfNotEmpty($settingsArray,'ipFields','ip_fields');
-        $this->addSettingIfNotEmpty($settingsArray,'syncOrigins','sync_origins');
+        $this->add_setting_if_not_empty($settingsArray, 'debug', 'debug_enabled', FILTER_VALIDATE_BOOLEAN);
+        $this->add_setting_if_not_empty($settingsArray, 'logPrefix', 'log_prefix');
+        $this->add_setting_if_not_empty($settingsArray, 'personalizationCookie', 'personalization_cookie', FILTER_VALIDATE_BOOLEAN);
+        $this->add_setting_if_not_empty($settingsArray, 'sessionTimeout', 'session_timeout', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'syncFrequency', 'sync_frequency', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'syncFrequencySecondary', 'sync_frequency_secondary', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'formSelector', 'form_selector');
+        $this->add_setting_if_not_empty($settingsArray, 'maxFileSize', 'max_file_size', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'formFailMessage', 'form_fail_message');
+        $this->add_setting_if_not_empty($settingsArray, 'formIdAttributes', 'form_id_attributes');
+        $this->add_setting_if_not_empty($settingsArray, 'formMinTime', 'form_min_time', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'formRateCount', 'form_rate_count', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'formRateTime', 'form_rate_time', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'formListenOnButton', 'form_listen_on_button', FILTER_VALIDATE_BOOLEAN);
+        $this->add_setting_if_not_empty($settingsArray, 'maxStorage', 'max_storage', FILTER_VALIDATE_INT);
+        $this->add_setting_if_not_empty($settingsArray, 'utmCookie', 'utm_cookie', FILTER_VALIDATE_BOOLEAN);
+        $this->add_setting_if_not_empty($settingsArray, 'idCookieDomain', 'id_cookie_domain');
+        $this->add_setting_if_not_empty($settingsArray, 'ignoreBehavior', 'ignore_behavior');
+        $this->add_setting_if_not_empty($settingsArray, 'disableAutoEvents', 'disable_auto_events');
+        $this->add_setting_if_not_empty($settingsArray, 'originHost', 'origin_host');
+        $this->add_setting_if_not_empty($settingsArray, 'ipLookup', 'ip_lookup');
+        $this->add_setting_if_not_empty($settingsArray, 'ipFields', 'ip_fields');
+        $this->add_setting_if_not_empty($settingsArray, 'syncOrigins', 'sync_origins');
 
         $servicePathsArray = array();
-        $this->addSettingIfNotEmpty($servicePathsArray,'formPath','form_path');
-        $this->addSettingIfNotEmpty($servicePathsArray,'visitorPath','visitor_path');
+        $this->add_setting_if_not_empty($servicePathsArray, 'formPath', 'form_path');
+        $this->add_setting_if_not_empty($servicePathsArray, 'visitorPath', 'visitor_path');
 
         wp_add_inline_script(
             $javascriptId,
@@ -595,8 +595,8 @@ class Snippet {
      * @param   string  $fieldId    The ID of the field to get the setting from.
      * @param   string  $filter     The input filter to apply to the setting value. This is on of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
      */
-    private function addSettingIfNotEmpty(array &$settings, string $key, string $fieldId,  $filter = null) {
-        $value = $this->settings->getSetting($fieldId);
+    private function add_setting_if_not_empty(array &$settings, string $key, string $fieldId,  $filter = null) {
+        $value = $this->settings->get_setting($fieldId);
         if ($value !== array() && empty($value) === false) {
             if (isset($filter)) {
                 $value = filter_var($value, $filter);
