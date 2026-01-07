@@ -101,7 +101,7 @@ class Snippet {
         $this->settings->add_field(
             'personalization_cookie',
             'Personalization Cookie', 
-            array($this, 'render_text_input'), 
+            array($this, 'render_checkbox_input'), 
             "Store Visitor Segment values into a 'send2crm' cookie for website back end access.", 
             'cookies', 
             $customizeTabName, 
@@ -113,7 +113,7 @@ class Snippet {
         $this->settings->add_field(
             'utm_cookie',
             'UTM Cookie', 
-            array($this, 'render_text_input'), 
+            array($this, 'render_checkbox_input'), 
             "Automatically process UTM parameters into a 'send2crmUTM' cookie.", 
             'cookies', 
             $customizeTabName, 
@@ -228,7 +228,7 @@ class Snippet {
         $this->settings->add_field(
             'form_listen_on_button',
             'Form Button Handler',
-            array($this, 'render_text_input'),
+            array($this, 'render_checkbox_input'),
             'For websites with existing <form> submit handlers, attach Send2CRM to the submit button.',
             'form',
             $customizeTabName,
@@ -307,7 +307,7 @@ class Snippet {
         $this->settings->add_field(
             'disable_auto_events',
             'Disable Auto Events', 
-            array($this, 'render_text_input'), 
+            array($this, 'render_checkbox_input'), 
             'Events such as page views will not be automatically recorded on the visitor session.', 
             'service', 
             $customizeTabName, 
@@ -332,17 +332,18 @@ class Snippet {
             'logging', 
             'Detailed Logging', 
             'Settings for controlling logging message output for Send2CRM JavaScript.', 
-            $customizeTabName
+            $customizeTabName,
         );
 
         $this->settings->add_field(
             'debug_enabled', 
             'Debug',
-            array($this, 'render_text_input'), 
+            array($this, 'render_checkbox_input'), 
             'Sends additional troubleshooting information to the browser console.', 
             'logging', 
             $customizeTabName, 
-            $customizeGroupName
+            $customizeGroupName,
+            type: 'checkbox',
         );
 
         $this->settings->add_field(
@@ -352,7 +353,7 @@ class Snippet {
             'Text prefix for all console log messages.', 
             'logging', 
             $customizeTabName, 
-            $customizeGroupName
+            $customizeGroupName,
         );
 
         // Create section for advanced settings
@@ -360,7 +361,7 @@ class Snippet {
             'advanced', 
             'Advanced', 
             'Settings related to advanced configuration of Send2CRM.', 
-            $customizeTabName
+            $customizeTabName,
         );
 
         //ipLookup
@@ -371,7 +372,8 @@ class Snippet {
             'The URL of an external IP address lookup service. This service is queried when new sessions are created, and fields from the response are saved to the ipInfo property of the session. Must return JSON. Set the ipLookup setting to a falsey value (e.g. empty string) to disable IP lookup completely.',
             'advanced',
             $customizeTabName,
-            $customizeGroupName
+            $customizeGroupName,
+            type: 'url',
         );
 
         //ipFields
@@ -382,7 +384,7 @@ class Snippet {
             'An array of strings indicating the field names of the IP lookup response to store.',
             'advanced',
             $customizeTabName,
-            $customizeGroupName
+            $customizeGroupName,
         );
 
         //syncOrigins
@@ -393,7 +395,7 @@ class Snippet {
             'Enables cross-domain sync for all included origins. A list of urls that begin with “https://”',
             'advanced',
             $customizeTabName,
-            $customizeGroupName
+            $customizeGroupName,
         );
 
         //formServicePath
@@ -404,7 +406,7 @@ class Snippet {
             'The relative path of the form submition endpoint for the Send2CRM API.',
             'advanced',
             $customizeTabName,
-            $customizeGroupName
+            $customizeGroupName,
         );
 
         //visitorServicePath
@@ -415,7 +417,7 @@ class Snippet {
             'The relative path of the visitor data update endpoint for the Send2CRM API.',
             'advanced',
             $customizeTabName,
-            $customizeGroupName
+            $customizeGroupName,
         );
     }
 
@@ -488,6 +490,29 @@ class Snippet {
             return;
         }
         echo "<p class='description'>" . wp_kses_post($description) ."</p>";
+    }
+
+    /**
+     * Render the setting as input checkbox field.
+     *
+     * @since    1.0.0
+     * @param   array   $arguments  Array of arguments passed to the function by the action hook.
+     */
+    public function render_checkbox_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->get_setting($fieldId,$optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
+        $description = $fieldDetails['description'];
+        // Render the input field 
+        $checked = checked($value, 1, false);
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='1' " . esc_html($checked) . ">";
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>". wp_kses_post($description). "</p>";
     }
     #endregion
 
