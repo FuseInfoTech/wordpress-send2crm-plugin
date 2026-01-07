@@ -437,11 +437,13 @@ class Snippet {
         $sanitized_output = array();
 
         foreach ($input as $key => $value) {
+            if (empty($value) === false) {
+                $field_type = $this->settings->get_field($key)['type'] ?? 'text';
+                //TODO Add validation here and possibly also on the front end so users don't submit invalid data?
+                $sanitized_output[$key] = $this->sanitize_by_type($value, $field_type);
+                continue;
+            }
 
-            
-            $field_type = $this->settings->get_field($key)['type'] ?? 'text';
-            //TODO Add validation here and possibly also on the front end so users don't submit invalid data?
-            $sanitized_output[$key] = $this->sanitize_by_type($value, $field_type);
 
         }
         return $sanitized_output;
