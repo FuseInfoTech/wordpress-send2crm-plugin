@@ -86,12 +86,15 @@ jQuery(document).ready(function($) {
             } catch (error) {
                 console.error('Error parsing releases from localStorage. Clearing releases so we can try again:', error);
                 localStorage.removeItem('send2crm_releases');
+                //TODO display an error to the user so it's clear fetching releases failed.
                 releases = null;
             }
         }
         // Options stores releases as an options array to be added to the select element.
         let options = [];
         if (releases) {
+            //TODO Add an option to say 'select a version tha tis selected if current version is empty.
+            //TODO handle cases where current version is not in releases array
             releases.forEach((release) => {
             options.push(
                 $('<option>', {

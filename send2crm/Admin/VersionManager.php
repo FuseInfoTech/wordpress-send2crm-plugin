@@ -65,13 +65,12 @@ public function __construct(Settings $settings, string $version) {
     }
 
     public function initialize_settings() {
-        $versionTabName = 'default_tab';
 
         //Create section for cookies settings
         $versionSectionName = $this->settings->add_section(
             'version', 
             'Library Version & Delivery', 
-            'Choose which version of the website Send2CRM client to load and how to deliver it.'
+            'Choose which version of the website Send2CRM client to load and how to deliver it.',
         );
 
         $this->settings->add_field(
@@ -79,7 +78,8 @@ public function __construct(Settings $settings, string $version) {
             'Version<span style="color: #d63638;">*</span>', 
             array($this, 'render_version_input'), 
             "Select which version of the website Send2CRM client to use on your site. After selecting a version and pressing Save, the security verification code below will automatically update with the integrity hash for that version.", 
-            $versionSectionName
+            $versionSectionName,
+            type: 'version',
         );
 
         $this->settings->add_field(
@@ -87,13 +87,14 @@ public function __construct(Settings $settings, string $version) {
             'Delivery Method', 
             array($this, 'render_cdn_input'), 
             "<strong>✓ Checked (CDN):</strong> Send2CRM will be loaded into your visitors browser from jsDeliver CDN - faster loading, automatic caching, reduced server load <br/><strong>○ Unchecked (Local):</strong> Downloads and serves a local copy from your WordPress server - use this to comply with strict security requirements.", 
-            $versionSectionName
+            $versionSectionName,
+            type: 'checkbox',
         );
 
         $verificationSectionName = $this->settings->add_section(
             'security-verification',
             'Security Verification', 
-            'Subresource Integrity (SRI) hash for the selected library version.'
+            'Subresource Integrity (SRI) hash for the selected library version.',
         );
 
         $this->settings->add_field(
@@ -213,24 +214,25 @@ public function __construct(Settings $settings, string $version) {
         $currentUseCDN = false;
         if (empty($currentValue) === false) {
             $currentVersion = array_key_exists('js_version', $currentValue) ? $currentValue['js_version'] : '';
-            $currentUseCDN = array_key_exists('use_cdn', $currentValue) ? ($currentValue['use_cdn'] === '1' ? true : false) : false;
+            $currentUseCDN = (bool)($currentValue['use_cdn'] ?? false);
         }
         $newVersion = array_key_exists('js_version', $newValue) ? $newValue['js_version'] : $currentVersion;
-        $newUseCDN = array_key_exists('use_cdn', $newValue) ? ($newValue['use_cdn'] === '1' ? true : false) : false;
+        //We don't fall back to the currentUseCDN value because this is a checkbox so the if `use_cdn` is not set then the checkbox was not ticked. There is never a need to fall back to the current value.
+        $newUseCDN =(bool)($newValue['use_cdn'] ?? false);
         $updateHash = false;
         $downloadJS = false;
         $removeJS = false;
         if ($currentVersion !== $newVersion) {
             $updateHash = true;
-            if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) { 
-                $downloadJS = true;
-            }
         } else if ($newUseCDN !== $currentUseCDN) {
             if ($newUseCDN && $this->release_file_exists($newVersion)) { 
+                //TODO Decide if we want to remove the Javascript file if we aren't using the CDN. Would we want to remove all versions or only the current one?
                 $removeJS = true;
-            } else if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) {
-                $downloadJS = true;
             }
+        }
+        // If we aren't using the CDN but JS file is missing then download it anyway to avoid errors finding the JS.
+        if ($newUseCDN === false && $this->release_file_exists($newVersion) === false) {
+                $downloadJS = true;
         }
 
         if ($updateHash) {
