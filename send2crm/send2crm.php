@@ -21,7 +21,7 @@
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires PHP:    8.1
- * Requires at least: 6.5.7
+ * Requires at least: 6.5
  * 
  */
 #endregion
@@ -139,10 +139,10 @@ class Send2CRM {
         if ($isAdmin)
         {
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
-            $this->settings->initializeHooks($isAdmin);
-            $this->versionManager->initializeHooks($isAdmin);
+            $this->settings->initialize_hooks($isAdmin);
+            $this->versionManager->initialize_hooks($isAdmin);
         } else {
-            $this->snippet->initializeHooks($isAdmin);
+            $this->snippet->initialize_hooks($isAdmin);
         }
         $this->isInitialized = true;
     }

@@ -1,6 +1,6 @@
 {
   "name": "wordpress-send2crm-plugin",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Integrate your WordPress site with the Send2CRM Salesforce package.",
   "keywords": [
     "wordpress",
@@ -20,6 +20,7 @@
   "type": "commonjs",
   "main": "",
   "scripts": {
-    "debug": "npx @wp-playground/cli@latest server --login --xdebug --experimental-unsafe-ide-integration=vscode --auto-mount=./send2crm"
+    "debug": "npx @wp-playground/cli@latest server --login --xdebug --experimental-unsafe-ide-integration=vscode --auto-mount=./send2crm",
+    "plugin:check" : "npx @wp-playground/cli@latest server --login --blueprint=blueprints/plugin-approval.json --mount=./send2crm:/wordpress/wp-content/plugins/send2crm"
   }
 }

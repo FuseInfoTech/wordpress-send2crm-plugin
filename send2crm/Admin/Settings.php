@@ -6,9 +6,7 @@ namespace Send2CRM\Admin;
 
 // If this file is called directly, abort.
 if (!defined('ABSPATH')) exit;
-#region Constants
-define('DEFAULT_GROUPING_NAME', 'settings');
-#endregion
+
 
 /**
  * Send2CRM Class that contains and manages plugnin settings and 
@@ -88,13 +86,13 @@ class Settings {
      * @since    1.0.0
      * @param   $isAdmin    Whether the current request is for an administrative interface page.
      */
-    public function initializeHooks(bool $isAdmin): void
+    public function initialize_hooks(bool $isAdmin): void
     {
         if ($isAdmin) {
             // Hook into admin_init 
-            add_action('admin_init', array($this,'initializeSettings'));
+            add_action('admin_init', array($this,'initialize_settings'));
             // Hook into admin_menu to add our page 
-            add_action('admin_menu', array($this,'setupSettingsMenu'));
+            add_action('admin_menu', array($this,'setup_settings_menu'));
         }
     }
 
@@ -106,7 +104,7 @@ class Settings {
      * @since    1.0.0
      * 
      */
-    public function initializeSettings(): void {
+    public function initialize_settings(): void {
         // Register the setting
         foreach ($this->groups as $groupName => $groupDetails) {
             $registerSettingParameters = array(
@@ -130,18 +128,18 @@ class Settings {
             );
         }
 
-        foreach ($this->fields as $fieldName => $fieldDetails) {
-            $callbackArgs = array(
-                'id' => $fieldName,
-                'label_for' => $fieldName,
+        foreach ($this->fields as $field_name => $field_details) {
+            $callback_args = array(
+                'id' => $field_name,
+                'label_for' => $field_name,
             );
             add_settings_field(
-                $fieldName,
-                $fieldDetails['label'],
-                $fieldDetails['callback'],
-                $fieldDetails['page'],
-                $fieldDetails['section'],
-                $callbackArgs
+                $field_name,
+                $field_details['label'],
+                $field_details['callback'],
+                $field_details['page'],
+                $field_details['section'],
+                $callback_args
             );
         }
     }
@@ -151,14 +149,14 @@ class Settings {
      *
      * @since    1.0.0
      */
-    public function setupSettingsMenu() 
+    public function setup_settings_menu() 
     {
         // Add a new menu page 
         add_options_page( "{$this->menuName} Settings", // Page title 
             $this->menuName, // Menu title 
             'manage_options', // Capability required 
             $this->menuSlug, // Menu slug 
-            array($this,'renderSettingsPageContent'), // Callback function 
+            array($this,'render_settings_page_content'), // Callback function 
             99 // Position 
         );
     }
@@ -169,7 +167,7 @@ class Settings {
      * @since   1.0.0
      * @param   activeTab       The name of the active tab.
      */
-    public function renderSettingsPageContent(string $activeTab = ''): void
+    public function render_settings_page_content(string $activeTab = ''): void
     {
         // Check user capabilities
         if (!current_user_can('manage_options'))
@@ -294,9 +292,11 @@ class Settings {
      *
      * @since   1.0.0
      * @param   string  $key    The name of the setting to retrieve.
-     * @return  string  The value of the setting if found, otherwise an empty string.
+     * @param   string  $groupName  The name of the group to retrieve the setting from. Null if not provided.
+     * @param   mixed   $default    The default value to return if the setting is not found. Empty String if not provided.
+     * @return  mixed  The value of the setting if found, otherwise returns the default provided.
      */
-    public function getSetting(string $key, string | null $groupName = null, string $default = ''): string {
+    public function get_setting(string $key, string | null $groupName = null, mixed $default = ''): mixed {
         if (is_null($groupName)) {
             $fieldDetails = $this->fields[$key] ?? null;
             if (is_null($fieldDetails)) {
@@ -341,9 +341,94 @@ class Settings {
      * @param   string  $groupName  The name of the option group to retrieve the setting from.
      * @return  string  The name of the setting, in the form of option_name[key].
      */
-    public function getSettingName(string $key, string $groupName): string {
+    public function get_setting_name(string $key, string $groupName): string {
         $settingName = "{$this->groups[$groupName]['option_name']}[{$key}]";
         return $settingName;    
+    }
+
+        /**
+     * Adds a field to the settings page.
+     * 
+     * @since   1.0.0
+     * @param   string  $name      The name of the field.
+     * @param   string  $label     The label of the field.
+     * @param   array   $render_callback   The callback function for rendering the field.
+     * @param   string  $description    The description of the field. Text here will be displayed below the field in the settings menu. 
+     * @param   string  $section_key     The name of the section to add the field to.
+     * @param   string  $tab_name       The name of the page to add the field to.
+     * @param   string  $group_name      The name of the option group to add the field to.
+     */
+    public function add_field(
+        string $name,
+        string $label, 
+        array $render_callback,
+        string $description = '', 
+        string $section_key = 'settings', 
+        string $tab_name = 'default_tab',
+        string $group_name = 'settings',
+        string $type = 'text'
+    ): void 
+    {
+        $this->fields[$name] = array(
+            'label' => $label,
+            'callback' => $render_callback,
+            'page' => $tab_name,
+            'section' => $this->get_section_name($section_key),
+            'option_group' => $this->get_option_group_name($group_name),
+            'description' => $description,
+            'type' => $type,
+        );
+    }
+
+    /**
+     * Adds a section to the settings page.
+     * 
+     * @since   1.0.0
+     * @param   string  $key            The name of the section.
+     * @param   string  $sectionLabel   The label of the section.
+     * @param   array   $sectionRenderCallback  The callback function for rendering the section.
+     * @param   string  $tab_name       The name of the page to add the section to. Defaults to the name of the menu slug.
+     */
+    public function add_section(
+        string $key,
+        string $sectionLabel, 
+        string $description = '', 
+        string $tab_name = 'default_tab',
+        array | null  $sectionRenderCallback = null, 
+    ): string {
+        if (is_null($sectionRenderCallback)) {
+            $sectionRenderCallback = array($this, 'default_render_section');
+        }
+        $sectionName = $this->get_section_name($key);
+        $this->sections[$sectionName] = array( 
+            'label' => $sectionLabel,
+            'callback' => $sectionRenderCallback,
+            'description' => $description,
+            'page' => $tab_name,
+        );
+        return $sectionName;
+    }
+
+
+
+    /**
+     * Adds a group to the settings page.
+     *  
+     * @since   1.0.0
+     * @param   string  $key            The name of the group.
+     * @param   array   $sanitizeAndValidateCallback  The callback function for sanitizing and validating the group.
+     * @param   string  $tabName        The name of the tab to add the group to. Defaults to the name of the menu slug.
+     * @param   string  $tab_title      The title of the tab to add the group to. Defaults to 'Plugin Settings'.
+     */
+    public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): string {
+        $groupName = $this->get_option_group_name($key);
+        $this->groups[$groupName] = array(
+            'option_name' => $this->get_option_name($key),
+            'callback' => $sanitizeAndValidateCallback,
+            'tab_name' => $tabName,
+            'tab_title' => $tab_title
+        );
+        return $groupName;
     }
 
     #endregion
@@ -422,87 +507,5 @@ class Settings {
         return "{$this->pluginSlug}_{$key}_option";
     }
 
-    //TODO Separate Public and private functions into correct regions
-    /**
-     * Adds a field to the settings page.
-     * 
-     * @since   1.0.0
-     * @param   string  $fieldName      The name of the field.
-     * @param   string  $fieldLabel     The label of the field.
-     * @param   array   $fieldRenderCallback   The callback function for rendering the field.
-     * @param   string  $description    The description of the field. Text here will be displayed below the field in the settings menu. 
-     * @param   string  $sectionKey     The name of the section to add the field to.
-     * @param   string  $pageName       The name of the page to add the field to.
-     * @param   string  $groupName      The name of the option group to add the field to.
-     */
-    public function add_field(
-        string $fieldName,
-        string $fieldLabel, 
-        array $fieldRenderCallback,
-        string $description = '', 
-        string $sectionKey = 'settings', 
-        string $pageName = 'default_tab', //TODO Should this really be called pageName or tabName. Is there value in having a page that isn't a tab since the render treates a tab as a page but it is still called a page.
-        string $groupName = 'settings',
-    ): void 
-    {
-        $this->fields[$fieldName] = array(
-            'label' => $fieldLabel,
-            'callback' => $fieldRenderCallback,
-            'page' => $pageName,
-            'section' => $this->get_section_name($sectionKey),
-            'option_group' => $this->get_option_group_name($groupName),
-            'description' => $description
-        );
-    }
-
-    /**
-     * Adds a section to the settings page.
-     * 
-     * @since   1.0.0
-     * @param   string  $key            The name of the section.
-     * @param   string  $sectionLabel   The label of the section.
-     * @param   array   $sectionRenderCallback  The callback function for rendering the section.
-     * @param   string  $pageName       The name of the page to add the section to. Defaults to the name of the menu slug.
-     */
-    public function add_section(
-        string $key,
-        string $sectionLabel, 
-        string $description = '', 
-        string $pageName = 'default_tab',
-        array | null  $sectionRenderCallback = null, 
-    ): string {
-        if (is_null($sectionRenderCallback)) {
-            $sectionRenderCallback = array($this, 'default_render_section');
-        }
-        $sectionName = $this->get_section_name($key);
-        $this->sections[$sectionName] = array( 
-            'label' => $sectionLabel,
-            'callback' => $sectionRenderCallback,
-            'description' => $description,
-            'page' => $pageName,
-        );
-        return $sectionName;
-    }
-
-
-
-    /**
-     * Adds a group to the settings page.
-     *  
-     * @since   1.0.0
-     * @param   string  $key            The name of the group.
-     * @param   array   $sanitizeAndValidateCallback  The callback function for sanitizing and validating the group.
-     * @param   string  $tabName        The name of the tab to add the group to. Defaults to the name of the menu slug.
-     * @param   string  $tab_title      The title of the tab to add the group to. Defaults to 'Plugin Settings'.
-     */
-    public function add_group(string $key, array $sanitizeAndValidateCallback, string $tabName = 'default_tab', string $tab_title = 'Plugin Settings'): string {
-        $groupName = $this->get_option_group_name($key);
-        $this->groups[$groupName] = array(
-            'option_name' => $this->get_option_name($key),
-            'callback' => $sanitizeAndValidateCallback,
-            'tab_name' => $tabName,
-            'tab_title' => $tab_title
-        );
-        return $groupName;
-    }
+    #endregion
 }
