@@ -15,7 +15,7 @@
  * Plugin Name: Send2CRM
  * Plugin URI:      https://github.com/FuseInfoTech/wordpress-send2crm-plugin/
  * Description:     Easily integrate your WordPress site with your CRM through FuseIT’s official Send2CRM Wordpress plugin.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: FuseIT
  * Author URI: https://fuseit.com
  * License: GPLv2 or later
