@@ -368,7 +368,7 @@ class Snippet {
         $this->settings->add_field(
             'ip_lookup',
             'IP Lookup Service URL',
-            array($this, 'render_text_input'),
+            array($this, 'render_optional_url_input'),
             'The URL of an external IP address lookup service. This service is queried when new sessions are created, and fields from the response are saved to the ipInfo property of the session. Must return JSON. Set the ipLookup setting to a falsey value (e.g. empty string) to disable IP lookup completely.',
             'advanced',
             $customizeTabName,
@@ -473,6 +473,34 @@ class Snippet {
     }
 
     /**
+     * Callback for displaying an optional url input field on the settings page.
+     * It includes a checkbox to disable the url input if the user wants to specifically remove the default.
+     * This is created for settings like IpLookup where the default value is an empty string but the input value can be set to a false as a non default setting.
+     * 
+     * @since   1.0.1
+     * @param   array  $arguments The arguments passed to the callback by the settings API hook.
+     */
+    public function render_optional_url_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->get_setting($fieldId, $optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
+        $description = $fieldDetails['description'];
+        // Render checkbox to disable input field 
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='1' " . checked($value, 1, false) . ">";
+        echo "Disable IP Lookup Service</br>";
+        // Render the input field 
+        echo "<p><input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'></p>";
+
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>" . wp_kses_post($description) ."</p>";
+    }
+
+    /**
      * Callback for displaying the text input field that a user it required to enter on the settings page.
      * 
      * @since   1.0.0
@@ -542,7 +570,7 @@ class Snippet {
     public function insert_snippet() {
         $apiKey = $this->settings->get_setting('api_key');
         $apiDomain = $this->settings->get_setting('api_domain');
-        $jsVersion = $this->settings->get_setting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
+        $jsVersion = $this->settings->get_setting('js_version');
         $jsHash = $this->settings->get_setting('js_hash');
         $useCDN = $this->settings->get_setting('use_cdn') ?? false;
 
@@ -665,9 +693,9 @@ class Snippet {
      * @param   array   &$settings  The settings array to add the setting to.
      * @param   string  $key        The key to add the setting to.
      * @param   string  $fieldId    The ID of the field to get the setting from.
-     * @param   string  $filter     The input filter to apply to the setting value. This is on of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
+     * @param   int  $filter     The input filter to apply to the setting value. This is one of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
      */
-    private function add_setting_if_not_empty(array &$settings, string $key, string $fieldId,  $filter = null) {
+    private function add_setting_if_not_empty(array &$settings, string $key, string $fieldId, int $filter = null) {
         $value = $this->settings->get_setting($fieldId);
         if ($value !== array() && empty($value) === false) {
             if (isset($filter)) {
