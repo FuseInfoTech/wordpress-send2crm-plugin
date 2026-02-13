@@ -48,7 +48,7 @@ require_once plugin_dir_path(__FILE__) . 'Autoloader.php';
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define('SEND2CRM_VERSION', '1.0.0');
+define('SEND2CRM_VERSION', '1.0.1');
 
 // The string used to uniquely identify this plugin.
 define('SEND2CRM_SLUG', 'send2crm');
