@@ -373,7 +373,7 @@ class Snippet {
             'advanced',
             $customizeTabName,
             $customizeGroupName,
-            type: 'url',
+            type: 'optional_url',
         );
 
         //ipFields
@@ -489,7 +489,7 @@ class Snippet {
         $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
         // Render checkbox to disable input field 
-        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='1' " . checked($value, 1, false) . ">";
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' value='1' " . checked($value, 1, false) . ">";
         echo "Disable IP Lookup Service</br>";
         // Render the input field 
         echo "<p><input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'></p>";
@@ -677,6 +677,7 @@ class Snippet {
         //TODO look at customised sanitizers such as domain, UUID, csv (eg for formIDattributes) etc.
         return match ($type) {
             'url'       => sanitize_url($value),
+            'optional_url' => $this->sanitize_optional_url($value),
             'email'     => sanitize_email($value),
             'checkbox'  => rest_sanitize_boolean($value),
             'number'    => absint($value),
@@ -684,6 +685,24 @@ class Snippet {
             'array'     => is_array($value) ? array_map('sanitize_text_field', $value) : array(),
             default     => sanitize_text_field($value),
         };
+    }
+
+    /**
+     * Sanitizes an optional URL for cases like IpLookup where the default value is an empty string but the input value can be set to a false as a non default setting. 
+     * 
+     * @since   1.0.1
+     * @param   mixed   $value  The input value of the setting sanitize.
+     * @return  mixed   False if the input value is not empty and does not start with http:// or https://, otherwise the sanitized url is returned.
+    */
+    private function sanitize_optional_url(mixed $value) : mixed {
+        if (
+            str_starts_with($value, 'http://') === false && 
+            str_starts_with($value, 'https://') === false && 
+            empty($value) === false 
+        ) {
+            return false;
+        }
+        return sanitize_url($value);
     }
 
     /**
@@ -697,7 +716,7 @@ class Snippet {
      */
     private function add_setting_if_not_empty(array &$settings, string $key, string $fieldId, int $filter = null) {
         $value = $this->settings->get_setting($fieldId);
-        if ($value !== array() && empty($value) === false) {
+        if ($value !== array() && (empty($value) === false || $value === false)) {
             if (isset($filter)) {
                 $value = filter_var($value, $filter);
             }
