@@ -488,11 +488,13 @@ class Snippet {
         $value = $this->settings->get_setting($fieldId, $optionGroup); 
         $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
+        $type = $value ? 'text' : 'hidden';
         // Render checkbox to disable input field 
-        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' value='1' " . checked($value, 1, false) . ">";
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' value='1' " . checked(!$value, 1, false) . ">";
         echo "Disable IP Lookup Service</br>";
+        
         // Render the input field 
-        echo "<p><input type='text' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'></p>";
+        echo "<p><input type='" . esc_attr($type) . "' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'></p>";
 
         if (empty($description)) {
             return;
