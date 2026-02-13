@@ -307,10 +307,13 @@ public function __construct(Settings $settings, string $version) {
     /**
      * Add the Send2CRM JS version manager script to the admin page.
      * 
+     * @param mixed $hook_suffix The admin page suffix to determin which page the function is running on.
      * @since 1.0.0
      */
-    public function insert_version_manager_scripts() {
-        
+    public function insert_version_manager_scripts(mixed $hook_suffix) {
+        if( $hook_suffix !== 'settings_page_' . $this->settings->pluginSlug ) {
+            return;
+        };
         $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . SEND2CRM_VERSION_MANAGER_FILENAME;
         $versionManagerJsPath = plugin_dir_path( __FILE__ ) . SEND2CRM_VERSION_MANAGER_FILENAME;
         $versionManagerJSId = "{$this->settings->pluginSlug}-version-manager";
