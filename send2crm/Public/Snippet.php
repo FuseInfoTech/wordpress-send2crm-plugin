@@ -11,9 +11,11 @@ if (!defined('ABSPATH')) exit;
 
 #region Constants
 define('SEND2CRM_JS_FOLDERNAME', 'js/');
+define('SEND2CRM_SETTING_JS_FOLDERNAME', 'Admin/js/');
 define('SEND2CRM_SNIPPET_FILENAME', SEND2CRM_JS_FOLDERNAME . 'send2crm-setup.js');
 define('SEND2CRM_ADDITIONAL_SETTINGS_URL', 'https://fuseit.atlassian.net/wiki/x/E4Dogg');
 define('SEND2CRM_CLIENT_CONFIG_URL','https://fuseit.atlassian.net/wiki/x/FYBagw');
+define('SEND2CRM_ADDITIONAL_SETTINGS_FILENAME', SEND2CRM_SETTING_JS_FOLDERNAME . 'additional-settings.js');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -47,6 +49,7 @@ class Snippet {
         $this->settings = $settings;
         $this->version = $version;
         $clientConfigUrl = SEND2CRM_CLIENT_CONFIG_URL;
+        //TODO Move to initialize settings function
         $additionalSettingsUrl = SEND2CRM_ADDITIONAL_SETTINGS_URL;
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
@@ -368,12 +371,12 @@ class Snippet {
         $this->settings->add_field(
             'ip_lookup',
             'IP Lookup Service URL',
-            array($this, 'render_text_input'),
-            'The URL of an external IP address lookup service. This service is queried when new sessions are created, and fields from the response are saved to the ipInfo property of the session. Must return JSON. Set the ipLookup setting to a falsey value (e.g. empty string) to disable IP lookup completely.',
+            array($this, 'render_optional_url_input'),
+            "<a href='https://ipinfo.io/glossary/ip-lookup' target='_blank'>What is this?</a><br/><strong>✓ Checked (Disable Lookup):</strong> Send2CRM will skip location lookups when a visitor starts a new session.<br/><strong>○ Unchecked (Perform Lookup):</strong> Send2CRM will look up visitor location information when a new session starts. You can enter a custom lookup service URL, or leave it blank to use the default service (https://ipinfo.io).", 
             'advanced',
             $customizeTabName,
             $customizeGroupName,
-            type: 'url',
+            type: 'optional_url',
         );
 
         //ipFields
@@ -473,6 +476,42 @@ class Snippet {
     }
 
     /**
+     * Callback for displaying an optional url input field on the settings page.
+     * It includes a checkbox to disable the url input if the user wants to specifically remove the default.
+     * This is created for settings like IpLookup where the default value is an empty string but the input value can be set to a false as a non default setting.
+     * 
+     * @since   1.0.1
+     * @param   array  $arguments The arguments passed to the callback by the settings API hook.
+     */
+    public function render_optional_url_input(array $arguments): void {
+        $fieldId = $arguments['id'];
+        $fieldDetails = $this->settings->get_field($fieldId);
+        // Get the current saved value 
+        $optionGroup = $fieldDetails['option_group'];
+        $value = $this->settings->get_setting($fieldId, $optionGroup); 
+        $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
+        $description = $fieldDetails['description'];
+        
+        //Set input to hidden if value is false
+        $type = $value === false? 'hidden' : 'text';
+
+        
+        // Render checkbox to disable input field 
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "-checkbox' value='1' " . checked($value === false, 1, false) . ">";
+        echo "Disable IP Lookup Service</br>";
+        
+        //Set input value to 'false' if value is false
+        $value = $value === false? 'false' : $value;
+        // Render the input field 
+        echo "<p><input type='" . esc_attr($type) . "' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'></p>";
+
+        if (empty($description)) {
+            return;
+        }
+        echo "<p class='description'>" . wp_kses_post($description) ."</p>";
+    }
+
+    /**
      * Callback for displaying the text input field that a user it required to enter on the settings page.
      * 
      * @since   1.0.0
@@ -525,9 +564,12 @@ class Snippet {
      * @since    1.0.0
      * @param   $isAdmin    Whether the current request is for an administrative interface page.
     */
+    //TODO: Check how this function is called from the plugin. Is is meant to be called from constructor or better to be called directly from plugin.
     public function initialize_hooks(bool $isAdmin): void
     {
         if ($isAdmin) {
+            //Hook on admin page to add javascript
+            add_action('admin_enqueue_scripts', array($this, 'insert_additional_settings_scripts'));
             return;
         }
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
@@ -542,7 +584,7 @@ class Snippet {
     public function insert_snippet() {
         $apiKey = $this->settings->get_setting('api_key');
         $apiDomain = $this->settings->get_setting('api_domain');
-        $jsVersion = $this->settings->get_setting('js_version'); //TODO tidy this up so it is not directly calling the field by te key
+        $jsVersion = $this->settings->get_setting('js_version');
         $jsHash = $this->settings->get_setting('js_hash');
         $useCDN = $this->settings->get_setting('use_cdn') ?? false;
 
@@ -631,6 +673,32 @@ class Snippet {
             ),
             'before',);
     }
+
+    public function insert_additional_settings_scripts(mixed $hook_suffix) : void {
+        if( $hook_suffix !== 'settings_page_' . $this->settings->pluginSlug ) {
+            return;
+        };
+
+        $additionalSettingsJSUrl = plugin_dir_url( __DIR__ ) . SEND2CRM_ADDITIONAL_SETTINGS_FILENAME;
+        $additionalSettingsJsPath = plugin_dir_path( __DIR__ ) . SEND2CRM_ADDITIONAL_SETTINGS_FILENAME;
+        $additionalSettingsJSId = "{$this->settings->pluginSlug}-additional-settings";
+        $additionalSettingsJSVersion = file_exists($additionalSettingsJsPath) ? filemtime($additionalSettingsJsPath) : $this->version;
+
+        if (wp_register_script( $additionalSettingsJSId, $additionalSettingsJSUrl, array('jquery'), $additionalSettingsJSVersion, false ) === false) {
+            add_settings_error( 'js_version', esc_attr('settings_updated'), "Unable to register Send2CRM additional settings script.", 'error' );
+            return;
+        }
+
+        wp_enqueue_script(
+            $additionalSettingsJSId,
+            $additionalSettingsJSUrl,
+            array('jquery'),
+            $this->version,
+            false
+        );
+        
+    }
+
     #endregion
 
     #region Private Functions
@@ -649,6 +717,7 @@ class Snippet {
         //TODO look at customised sanitizers such as domain, UUID, csv (eg for formIDattributes) etc.
         return match ($type) {
             'url'       => sanitize_url($value),
+            'optional_url' => $this->sanitize_optional_url($value),
             'email'     => sanitize_email($value),
             'checkbox'  => rest_sanitize_boolean($value),
             'number'    => absint($value),
@@ -659,17 +728,35 @@ class Snippet {
     }
 
     /**
+     * Sanitizes an optional URL for cases like IpLookup where the default value is an empty string but the input value can be set to a false as a non default setting. 
+     * 
+     * @since   1.0.1
+     * @param   mixed   $value  The input value of the setting sanitize.
+     * @return  mixed   False if the input value is not empty and does not start with http:// or https://, otherwise the sanitized url is returned.
+    */
+    private function sanitize_optional_url(mixed $value) : mixed {
+        if (
+            str_starts_with($value, 'http://') === false && 
+            str_starts_with($value, 'https://') === false && 
+            empty($value) === false 
+        ) {
+            return false;
+        }
+        return sanitize_url($value);
+    }
+
+    /**
      * Adds a setting to the settings array if it is not empty using the provided field data and input filter.
      * 
      * @since   1.0.0
      * @param   array   &$settings  The settings array to add the setting to.
      * @param   string  $key        The key to add the setting to.
      * @param   string  $fieldId    The ID of the field to get the setting from.
-     * @param   string  $filter     The input filter to apply to the setting value. This is on of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
+     * @param   int  $filter     The input filter to apply to the setting value. This is one of the validation filter constants from 'https://www.php.net/manual/en/filter.constants.php'. For example 'FILTER_VALIDATE_BOOLEAN' applies a boolean filter to the setting. 
      */
-    private function add_setting_if_not_empty(array &$settings, string $key, string $fieldId,  $filter = null) {
+    private function add_setting_if_not_empty(array &$settings, string $key, string $fieldId, int $filter = null) {
         $value = $this->settings->get_setting($fieldId);
-        if ($value !== array() && empty($value) === false) {
+        if ($value !== array() && (empty($value) === false || $value === false)) {
             if (isset($filter)) {
                 $value = filter_var($value, $filter);
             }

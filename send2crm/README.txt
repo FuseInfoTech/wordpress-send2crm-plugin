@@ -3,7 +3,7 @@ Contributors: fuseit
 Tags: Send2CRM, Salesforce, Analytics, CRM, Sales
 Requires at least: 6.5
 Tested up to: 6.9
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -71,6 +71,9 @@ A Salesforce org with Send2CRM already installed from the [Salesforce AppExchang
 4. Select the version of Send2CRM JavaScript that is compatible with your Salesforce Send2CRM package version.
 
 == Changelog ==
- 
+
+= 1.0.1 =
+* Fixed an issue where disabling the IP lookup service didn't work properly that resulted in errors when trying to turn off collection of ip information.
+
 = 1.0.0 =
 * Initial Version

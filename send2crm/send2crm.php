@@ -15,7 +15,7 @@
  * Plugin Name: Send2CRM
  * Plugin URI:      https://github.com/FuseInfoTech/wordpress-send2crm-plugin/
  * Description:     Easily integrate your WordPress site with your CRM through FuseIT’s official Send2CRM Wordpress plugin.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: FuseIT
  * Author URI: https://fuseit.com
  * License: GPLv2 or later
@@ -48,7 +48,7 @@ require_once plugin_dir_path(__FILE__) . 'Autoloader.php';
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define('SEND2CRM_VERSION', '1.0.0');
+define('SEND2CRM_VERSION', '1.0.1');
 
 // The string used to uniquely identify this plugin.
 define('SEND2CRM_SLUG', 'send2crm');
@@ -141,9 +141,8 @@ class Send2CRM {
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
             $this->settings->initialize_hooks($isAdmin);
             $this->versionManager->initialize_hooks($isAdmin);
-        } else {
-            $this->snippet->initialize_hooks($isAdmin);
         }
+        $this->snippet->initialize_hooks($isAdmin);
         $this->isInitialized = true;
     }
 

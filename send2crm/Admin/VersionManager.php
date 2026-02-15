@@ -53,8 +53,6 @@ class VersionManager {
 
     private string $minimumVersion;
 
-    private array $releases;
-
 public function __construct(Settings $settings, string $version) {
         $this->settings = $settings;
         $this->version = $version;
@@ -308,9 +306,13 @@ public function __construct(Settings $settings, string $version) {
      * Add the Send2CRM JS version manager script to the admin page.
      * 
      * @since 1.0.0
+     * 
+     * @param mixed $hook_suffix The admin page suffix to determin which page the function is running on.
      */
-    public function insert_version_manager_scripts() {
-        
+    public function insert_version_manager_scripts(mixed $hook_suffix) : void {
+        if( $hook_suffix !== 'settings_page_' . $this->settings->pluginSlug ) {
+            return;
+        };
         $versionManagerJSUrl = plugin_dir_url( __FILE__ ) . SEND2CRM_VERSION_MANAGER_FILENAME;
         $versionManagerJsPath = plugin_dir_path( __FILE__ ) . SEND2CRM_VERSION_MANAGER_FILENAME;
         $versionManagerJSId = "{$this->settings->pluginSlug}-version-manager";
@@ -335,6 +337,7 @@ public function __construct(Settings $settings, string $version) {
         wp_localize_script($versionManagerJSId, 'send2crmReleases', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('send2crm_releases_nonce'),
+            //TODO: Remove hard coded element id and reference it from the field
             'version_element_id' => "js_version",
         ));
     }
