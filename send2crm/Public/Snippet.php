@@ -11,9 +11,11 @@ if (!defined('ABSPATH')) exit;
 
 #region Constants
 define('SEND2CRM_JS_FOLDERNAME', 'js/');
+define('SEND2CRM_SETTING_JS_FOLDERNAME', 'Admin/js/');
 define('SEND2CRM_SNIPPET_FILENAME', SEND2CRM_JS_FOLDERNAME . 'send2crm-setup.js');
 define('SEND2CRM_ADDITIONAL_SETTINGS_URL', 'https://fuseit.atlassian.net/wiki/x/E4Dogg');
 define('SEND2CRM_CLIENT_CONFIG_URL','https://fuseit.atlassian.net/wiki/x/FYBagw');
+define('SEND2CRM_ADDITIONAL_SETTINGS_FILENAME', SEND2CRM_SETTING_JS_FOLDERNAME . 'additional-settings.js');
 #endregion
 /**
  * The frontend functionality of the plugin.
@@ -47,6 +49,7 @@ class Snippet {
         $this->settings = $settings;
         $this->version = $version;
         $clientConfigUrl = SEND2CRM_CLIENT_CONFIG_URL;
+        //TODO Move to initialize settings function
         $additionalSettingsUrl = SEND2CRM_ADDITIONAL_SETTINGS_URL;
         //Create the required settings as the default settings group, section.
         $this->settings->add_group('settings', array($this,'sanitize_and_validate_settings'),'default_tab', 'Setup');
@@ -488,11 +491,17 @@ class Snippet {
         $value = $this->settings->get_setting($fieldId, $optionGroup); 
         $settingName = $this->settings->get_setting_name($fieldId, $optionGroup);
         $description = $fieldDetails['description'];
+        
+        //Set input to hidden if value is false
         $type = $value === false? 'hidden' : 'text';
+
+        
         // Render checkbox to disable input field 
-        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "' value='1' " . checked($value === false, 1, false) . ">";
+        echo "<input type='checkbox' id='" . esc_attr($fieldId) . "-checkbox' value='1' " . checked($value === false, 1, false) . ">";
         echo "Disable IP Lookup Service</br>";
         
+        //Set input value to 'false' if value is false
+        $value = $value === false? 'false' : $value;
         // Render the input field 
         echo "<p><input type='" . esc_attr($type) . "' id='" . esc_attr($fieldId) . "' name='" . esc_attr($settingName) . "' value='" . esc_attr($value) . "'></p>";
 
@@ -555,9 +564,12 @@ class Snippet {
      * @since    1.0.0
      * @param   $isAdmin    Whether the current request is for an administrative interface page.
     */
+    //TODO: Check how this function is called from the plugin. Is is meant to be called from constructor or better to be called directly from plugin.
     public function initialize_hooks(bool $isAdmin): void
     {
         if ($isAdmin) {
+            //Hook on admin page to add javascript
+            add_action('admin_enqueue_scripts', array($this, 'insert_additional_settings_scripts'));
             return;
         }
         //Hook Send2CRM snippet as script tag in header of public site only and not admin pages
@@ -661,6 +673,32 @@ class Snippet {
             ),
             'before',);
     }
+
+    public function insert_additional_settings_scripts(mixed $hook_suffix) : void {
+        if( $hook_suffix !== 'settings_page_' . $this->settings->pluginSlug ) {
+            return;
+        };
+
+        $additionalSettingsJSUrl = plugin_dir_url( __DIR__ ) . SEND2CRM_ADDITIONAL_SETTINGS_FILENAME;
+        $additionalSettingsJsPath = plugin_dir_path( __DIR__ ) . SEND2CRM_ADDITIONAL_SETTINGS_FILENAME;
+        $additionalSettingsJSId = "{$this->settings->pluginSlug}-additional-settings";
+        $additionalSettingsJSVersion = file_exists($additionalSettingsJsPath) ? filemtime($additionalSettingsJsPath) : $this->version;
+
+        if (wp_register_script( $additionalSettingsJSId, $additionalSettingsJSUrl, array('jquery'), $additionalSettingsJSVersion, false ) === false) {
+            add_settings_error( 'js_version', esc_attr('settings_updated'), "Unable to register Send2CRM additional settings script.", 'error' );
+            return;
+        }
+
+        wp_enqueue_script(
+            $additionalSettingsJSId,
+            $additionalSettingsJSUrl,
+            array('jquery'),
+            $this->version,
+            false
+        );
+        
+    }
+
     #endregion
 
     #region Private Functions

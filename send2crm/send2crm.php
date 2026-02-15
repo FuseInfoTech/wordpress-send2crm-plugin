@@ -141,9 +141,8 @@ class Send2CRM {
             add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array($this,'add_action_links') );
             $this->settings->initialize_hooks($isAdmin);
             $this->versionManager->initialize_hooks($isAdmin);
-        } else {
-            $this->snippet->initialize_hooks($isAdmin);
         }
+        $this->snippet->initialize_hooks($isAdmin);
         $this->isInitialized = true;
     }
 
