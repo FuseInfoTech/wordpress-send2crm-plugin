@@ -369,7 +369,7 @@ class Snippet {
             'ip_lookup',
             'IP Lookup Service URL',
             array($this, 'render_optional_url_input'),
-            'The URL of an external IP address lookup service. This service is queried when new sessions are created, and fields from the response are saved to the ipInfo property of the session. Must return JSON. Set the ipLookup setting to a falsey value (e.g. empty string) to disable IP lookup completely.',
+            "<a href='https://ipinfo.io/glossary/ip-lookup' target='_blank'>What is this?</a><br/><strong>✓ Checked (Disable Lookup):</strong> Send2CRM will skip location lookups when a visitor starts a new session.<br/><strong>○ Unchecked (Perform Lookup):</strong> Send2CRM will look up visitor location information when a new session starts. You can enter a custom lookup service URL, or leave it blank to use the default service (https://ipinfo.io).", 
             'advanced',
             $customizeTabName,
             $customizeGroupName,
